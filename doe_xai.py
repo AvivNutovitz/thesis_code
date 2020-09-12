@@ -1,0 +1,118 @@
+import itertools
+from sklearn.linear_model import LinearRegression
+from mlxtend.feature_selection import SequentialFeatureSelector
+
+from design_creator import DesignCreator
+from data_modifier import DataModifier
+from predictor import Predictor
+from validator import Validator
+from utils import *
+
+
+class DoeXai:
+
+    def __init__(self, x_data, y_data, model, feature_names=None, design_file_name=None, verbose=0):
+        if isinstance(x_data, pd.DataFrame):
+            self.x_data = x_data.values
+            self.feature_names = list(x_data.columns)
+        elif isinstance(x_data, np.ndarray):
+            self.x_data = x_data
+            if feature_names:
+                self.feature_names = feature_names
+            else:
+                raise Exception("Must pass feature_names if x_data is np.ndarray")
+        else:
+            raise ValueError("x_data can by pandas DataFrame or numpy ndarray ONLY")
+        if isinstance(y_data, pd.DataFrame):
+            self.y_data = y_data.values
+        elif isinstance(y_data, np.ndarray):
+            self.y_data = y_data
+        else:
+            raise ValueError("y_data can by pandas DataFrame or numpy ndarray ONLY")
+
+        self.model = model
+        if design_file_name:
+            self.dc = DesignCreator(feature_matrix=None, file_name=design_file_name)
+        else:
+            self.dc = DesignCreator(feature_matrix=self.x_data)
+        self.verbose = verbose
+
+        reference_values = [row.mean() for row in self.x_data.T]
+        lists_of_designs, list_of_all_positions_per_design = self.dc.get_lists_of_design_from_df_for_tabluar_data(
+            reference_values)
+
+        dm = DataModifier(self.x_data, lists_of_designs, list_of_all_positions_per_design, len(reference_values))
+        self.zeds_df, data_modified_list = dm.set_tabular_data_for_prediction()
+
+        p = Predictor(data_modified_list, self.y_data, self.model)
+        self.all_predictions_all_targets, self.all_predictions_df = p.create_tabular_gs_df()
+
+    def find_feature_contribution(self, user_list=None, run_fffs=False):
+        y = self.all_predictions_df.mean(axis=1)
+        x = self._get_x_for_feature_contribution(user_list)
+        m, selected_features_x = self._fit_linear_approximation(x, y, run_fffs)
+        return self._create_contribution(m, selected_features_x)
+
+    @staticmethod
+    def _create_contribution(m, selected_features_x):
+        contributions = {}
+        for index, col in enumerate(selected_features_x):
+            contributions[col] = m.coef_[index]
+        return contributions
+
+    def _fit_linear_approximation(self, x, y, run_fffs):
+        m = LinearRegression()
+        selected_features_x = list(x.columns)
+        if run_fffs:
+            feature_selector = SequentialFeatureSelector(LinearRegression(),
+                                                         k_features=max(int(np.sqrt(x.shape[1])), self.zeds_df.shape[1]),
+                                                         forward=True,
+                                                         verbose=2,
+                                                         cv=5,
+                                                         n_jobs=-1,
+                                                         scoring='r2')
+
+            features = feature_selector.fit(x, y)
+            selected_columns = list(features.k_feature_names_)
+            selected_columns.extend(self.zeds_df.columns.astype(str))
+            selected_features_x = pd.DataFrame(x)[set(selected_columns)]
+            m.fit(selected_features_x, y)
+        else:
+            m.fit(x, y)
+
+        return m, selected_features_x
+
+    def _get_x_for_feature_contribution(self, user_list=None):
+        x = self.zeds_df.copy()
+        if user_list:
+            for new_feature in user_list:
+                feature_name = str(new_feature[0])
+                feature_value = x[new_feature[0]]
+                for index, elements in enumerate(new_feature):
+                    if index > 0:
+                        feature_name += '-' + str(new_feature[index])
+                        feature_value = feature_value * x[new_feature[index]]
+                x[feature_name] = feature_value
+        else:
+            list_of_columns_pairs = list(itertools.combinations(range(self.zeds_df.shape[1]), 2))
+            for pair in list_of_columns_pairs:
+                new_feature = str(pair[0]) + '-' + str(pair[1])
+                x[new_feature] = x[pair[0]] * x[pair[1]]
+
+        x.columns = x.columns.astype(str)
+        return x
+
+    def output_process_files(self, output_files_prefix):
+        # self.df_output.to_csv(f'{output_files_prefix}_feature_contributions.csv', index=False)
+        self.zeds_df.to_csv(f'{output_files_prefix}_zeds_df.csv', index=False)
+        self.all_predictions_df.to_csv(f'{output_files_prefix}_gs_df.csv', index=False)
+
+    def validate_doe_xai_results_vs_shap(self, feature_contributions):
+        shap_values = shap.LinearExplainer(self.model, self.x_data, nsamples=self.x_data.shape[0]).shap_values(
+            self.x_data)
+        # v = Validator(self.feature_names, shap_values, self.class_feature_contributions)
+        v = Validator(self.feature_names, shap_values, feature_contributions)
+        kendalltau_st_and_pv_all_classes = v.get_kendalltau_st_and_pv_all_classes()
+        # kendalltau_st_and_pv_global = v.get_kendalltau_st_and_pv_global(self.global_feature_contributions)
+        # return kendalltau_st_and_pv_all_classes, kendalltau_st_and_pv_global
+        return kendalltau_st_and_pv_all_classes
