@@ -14,8 +14,14 @@ class Predictor:
         for data_modified in self.data_modified_list:
             case_predictions = pd.DataFrame(self.model.predict_proba(data_modified))
             all_predictions_all_targets.append(case_predictions)
-            case_predictions_one_target = [v[1][self.target_df[v[0]]] for v in case_predictions.iterrows()]
+            case_predictions_one_target = []
+            for v in case_predictions.iterrows():
+                if isinstance(v[1][self.target_df[v[0]]],  float):
+                    case_predictions_one_target.append(v[1][self.target_df[v[0]]])
+                elif isinstance(v[1][self.target_df[v[0]]],  pd.Series):
+                    case_predictions_one_target.append(v[1][self.target_df[v[0]]].values)
             all_predictions_one_target.append(case_predictions_one_target)
+
         return all_predictions_all_targets, pd.DataFrame(all_predictions_one_target)
 
     # -- for image data not in use now --

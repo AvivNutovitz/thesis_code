@@ -43,14 +43,14 @@ class Plotter():
         plt.show()
 
     # doe contribution
-    def plot_doe_feature_contribution(self, class_feature_contributions, class_index, color='b'):
+    def plot_doe_feature_contribution(self, class_feature_contributions, color='b'):
         plt.figure()
-        # Contributions = np.array([values for key, values in class_feature_contributions.items()])
-        Contributions = np.abs(pd.DataFrame(class_feature_contributions[class_index]).values[0])
-        indices = np.argsort(Contributions)
-        features_to_show = self.feature_names
-        plt.title(f"Feature contribution Based on 2 Factor Design Features Contribution of class {class_index}")
-        plt.barh(range(self.X_train.shape[1]), Contributions[indices], color=color, align="center")
-        plt.yticks(range(self.X_train.shape[1]), np.array(features_to_show)[indices.astype(int)])
-        plt.ylim([-1, self.X_train.shape[1]])
+        contributions = np.array([np.abs(values) for key, values in class_feature_contributions.items()])
+        # Contributions = np.abs(pd.DataFrame(class_feature_contributions[class_index]).values[0])
+        indices = np.argsort(contributions)
+        features_to_show = list(class_feature_contributions.keys())
+        plt.title(f"Feature contribution Based on 2 Factor Design Features Contribution")
+        plt.barh(range(len(features_to_show)), contributions[indices], color=color, align="center")
+        plt.yticks(range(len(features_to_show)), np.array(features_to_show)[indices.astype(int)])
+        plt.ylim([-1, len(features_to_show)])
         plt.show()
