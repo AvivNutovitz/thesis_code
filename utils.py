@@ -3,6 +3,8 @@ import numpy as np
 from collections import defaultdict
 import matplotlib.pyplot as plt
 import shap
+import os
+from pathlib import Path
 
 
 def create_output_means_of_classes_file(input_file_name, labeled_df):
@@ -53,3 +55,24 @@ def plot_feature_histograms(feature_index_histograms, feature_index):
     plt.boxplot(data)
     plt.xticks(range(1, len(labels) + 1), labels)
     plt.show()
+
+
+def load_data(file_name, size):
+    example_path = 'example_data'
+    df = pd.read_csv(os.path.join(os.getcwd(), '..', f'{example_path}/{file_name}_data.csv'))
+    if file_name == 'wine':
+        pass
+    elif file_name == 'fake_job_posting':
+        df.fillna(" ", inplace=True)
+        df['text'] = df['title'] + ' ' + df['location'] + ' ' + df['department'] + ' ' + df['company_profile'] + ' ' + \
+                     df['description'] + ' ' + df['requirements'] + ' ' + df['benefits'] + ' ' + df['employment_type'] \
+                     + ' ' + df['required_education'] + ' ' + df['industry'] + ' ' + df['function']
+        if size:
+            return df['text'].iloc[0:size], df['fraudulent'].iloc[0:size]
+        else:
+            return df['text'], df['fraudulent']
+
+
+def get_base():
+    return pd.read_csv(os.path.join(os.getcwd(), '..', 'resources/base_36.csv'), header=None)
+

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
+from utils import get_base
 
 random.seed = 42
 
@@ -47,7 +48,7 @@ class DesignCreator:
         return [1 if char == '+' else -1 for char in [char for char in row]]
 
     def _create_base_design(self):
-        base = pd.read_csv(self.base_36_file, header=None)
+        base = get_base()
         self.design_df = pd.DataFrame.from_records(base[0].apply(lambda x: self.clean_row(x)))
 
     def create_design_from_feature_matrix(self, feature_matrix):

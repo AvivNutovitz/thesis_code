@@ -25,7 +25,7 @@ class DoeXai:
             raise ValueError("x_data can by pandas DataFrame or numpy ndarray ONLY")
         if isinstance(y_data, pd.DataFrame):
             self.y_data = y_data.values
-        elif isinstance(y_data, np.ndarray):
+        elif isinstance(y_data, np.ndarray) or isinstance(y_data, pd.Series):
             self.y_data = y_data
         else:
             raise ValueError("y_data can by pandas DataFrame or numpy ndarray ONLY")
