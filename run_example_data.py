@@ -29,7 +29,7 @@ test_score = model.score(X_test, y_test)
 
 dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=wine.feature_names)
 
-cont = dx.find_feature_contribution(user_list=[[1,2,3,4],[1,2,3],[5,6]])
+cont = dx.find_feature_contribution(user_list=[[1, 2, 3, 4], [1, 2, 3], [5, 6]])
 # print(dx.all_predictions_df.mean(axis=1))
 #
 # print(dx.all_predictions_df)
