@@ -4,7 +4,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import shap
 import os
-from pathlib import Path
+import itertools
 
 
 def create_output_means_of_classes_file(input_file_name, labeled_df):
@@ -74,5 +74,15 @@ def load_data(file_name, size):
 
 
 def get_base():
-    return pd.read_csv(os.path.join(os.getcwd(), '..', 'resources/base_36.csv'), header=None)
+    try:
+        return pd.read_csv(os.path.join(os.getcwd(), '..', 'resources/base_36.csv'), header=None)
+    except:
+        return pd.read_csv(os.path.join(os.getcwd(), 'resources/base_36.csv'), header=None)
 
+# todo
+# def get_feature_names_combinations(feature_names):
+#     new_feature_names = []
+#     list_of_columns_pairs = list(itertools.combinations(feature_names, 2))
+#     for pair in list_of_columns_pairs:
+#         new_feature_names.append(str(pair[0]) + '-' + str(pair[1]))
+#     return new_feature_names

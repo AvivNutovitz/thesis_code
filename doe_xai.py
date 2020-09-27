@@ -1,6 +1,7 @@
 import itertools
 from sklearn.linear_model import LinearRegression
 from mlxtend.feature_selection import SequentialFeatureSelector
+from scipy.sparse import csr_matrix
 
 from design_creator import DesignCreator
 from data_modifier import DataModifier
@@ -12,9 +13,16 @@ from utils import *
 class DoeXai:
 
     def __init__(self, x_data, y_data, model, feature_names=None, design_file_name=None, verbose=0):
+        # condition on x_data
         if isinstance(x_data, pd.DataFrame):
             self.x_data = x_data.values
             self.feature_names = list(x_data.columns)
+        elif isinstance(x_data, csr_matrix):
+            self.x_data = x_data.toarray()
+            if feature_names:
+                self.feature_names = feature_names
+            else:
+                raise Exception("Must pass feature_names if x_data is csr_matrix")
         elif isinstance(x_data, np.ndarray):
             self.x_data = x_data
             if feature_names:
@@ -22,14 +30,17 @@ class DoeXai:
             else:
                 raise Exception("Must pass feature_names if x_data is np.ndarray")
         else:
-            raise ValueError("x_data can by pandas DataFrame or numpy ndarray ONLY")
+            raise ValueError(f"x_data can by pandas DataFrame or numpy ndarray or scipy.sparse csr_matrix ONLY, "
+                             f"but passed {type(x_data)}")
+        # condition on y_data
         if isinstance(y_data, pd.DataFrame):
             self.y_data = y_data.values
-        elif isinstance(y_data, np.ndarray) or isinstance(y_data, pd.Series):
+        elif isinstance(y_data, np.ndarray):
             self.y_data = y_data
+        elif isinstance(y_data, pd.Series):
+            self.y_data = y_data.reset_index(drop=True)
         else:
-            raise ValueError("y_data can by pandas DataFrame or numpy ndarray ONLY")
-
+            raise ValueError(f"y_data can by pandas DataFrame or Series or numpy ndarray ONLY, but passed {type(y_data)}")
         self.model = model
         if design_file_name:
             self.dc = DesignCreator(feature_matrix=None, file_name=design_file_name)
@@ -116,3 +127,7 @@ class DoeXai:
         # kendalltau_st_and_pv_global = v.get_kendalltau_st_and_pv_global(self.global_feature_contributions)
         # return kendalltau_st_and_pv_all_classes, kendalltau_st_and_pv_global
         return kendalltau_st_and_pv_all_classes
+
+    def match_feature_names_to_contributions(self):
+        # todo
+        pass

@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import shap
+from scipy.sparse import csr_matrix
 import matplotlib.style
 import matplotlib.pyplot as plt
 matplotlib.style.use('classic')
@@ -8,6 +9,26 @@ matplotlib.style.use('classic')
 
 class Plotter():
     def __init__(self, x_train, feature_names):
+        # condition on x_data
+        if isinstance(x_train, pd.DataFrame):
+            self.x_data = x_train.values
+            self.feature_names = list(x_train.columns)
+        elif isinstance(x_train, csr_matrix):
+            self.x_data = x_train.toarray()
+            if feature_names:
+                self.feature_names = feature_names
+            else:
+                raise Exception("Must pass feature_names if x_train is csr_matrix")
+        elif isinstance(x_train, np.ndarray):
+            self.x_data = x_train
+            if feature_names:
+                self.feature_names = feature_names
+            else:
+                raise Exception("Must pass feature_names if x_train is np.ndarray")
+        else:
+            raise ValueError(f"x_train can by pandas DataFrame or numpy ndarray or scipy.sparse csr_matrix ONLY, "
+                             f"but passed {type(x_train)}")
+        assert len(feature_names) == x_train.shape[1]
         self.X_train = x_train
         self.feature_names = feature_names
 
@@ -43,7 +64,7 @@ class Plotter():
         plt.show()
 
     # doe contribution
-    def plot_doe_feature_contribution(self, class_feature_contributions, color='b'):
+    def plot_doe_feature_contribution(self, class_feature_contributions,  color='b'):
         plt.figure()
         contributions = np.array([np.abs(values) for key, values in class_feature_contributions.items()])
         # Contributions = np.abs(pd.DataFrame(class_feature_contributions[class_index]).values[0])
