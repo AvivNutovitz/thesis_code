@@ -25,6 +25,7 @@ model.fit(X_train, y_train)
 # get test score
 test_score = model.score(X_test, y_test)
 
+# DOE
 dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=wine.feature_names)
 
 cont = dx.find_feature_contribution(user_list=[[1, 2, 3, 4], [1, 2, 3], [5, 6]])
