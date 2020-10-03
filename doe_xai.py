@@ -95,6 +95,11 @@ class DoeXai:
 
     def _get_x_for_feature_contribution(self, user_list=None):
         x = self.zeds_df.copy()
+        try:
+            x.columns = self.feature_names
+        except:
+            pass
+
         if user_list:
             for new_feature in user_list:
                 feature_name = str(new_feature[0])
@@ -105,7 +110,8 @@ class DoeXai:
                         feature_value = feature_value * x[new_feature[index]]
                 x[feature_name] = feature_value
         else:
-            list_of_columns_pairs = list(itertools.combinations(range(self.zeds_df.shape[1]), 2))
+            # list_of_columns_pairs = list(itertools.combinations(range(self.zeds_df.shape[1]), 2))
+            list_of_columns_pairs = list(itertools.combinations(x.columns, 2))
             for pair in list_of_columns_pairs:
                 new_feature = str(pair[0]) + '-' + str(pair[1])
                 x[new_feature] = x[pair[0]] * x[pair[1]]
