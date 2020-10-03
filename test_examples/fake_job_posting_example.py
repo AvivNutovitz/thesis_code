@@ -36,7 +36,7 @@ def lemmatize_words(text):
     for i in text.split():
         if i.strip().lower() not in stop:
             pos = pos_tag([i.strip()])
-            word = lemmatizer.lemmatize(i.strip(),get_simple_pos(pos[0][1]))
+            word = lemmatizer.lemmatize(i.strip(), get_simple_pos(pos[0][1]))
             final_text.append(word.lower())
     return " ".join(final_text)
 
@@ -67,13 +67,14 @@ print(f'mnb tfidf test score : {mnb_tfidf_score}')
 
 
 # --- DOE
-dx = DoeXai(x_data=tv_train_reviews, y_data=y_train, model=mnb, feature_names=tv.get_feature_names())
+train_clean_data = pd.DataFrame(tv_train_reviews.toarray(), columns=tv.get_feature_names())
+dx = DoeXai(x_data=train_clean_data, y_data=y_train, model=mnb, feature_names=tv.get_feature_names())
 
-cont = dx.find_feature_contribution()
+cont = dx.find_feature_contribution(user_list=[['90 seconds', 'bcg', 'contractor shall']])
 print(cont)
 
 # --- Plot
-# p = Plotter(tv_train_reviews.toarray(), tv.get_feature_names())
-# p.plot_doe_feature_contribution(cont)
+p = Plotter(train_clean_data)
+p.plot_doe_feature_contribution(cont)
 
 
