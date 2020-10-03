@@ -56,7 +56,7 @@ class Plotter():
         # Contributions = np.abs(pd.DataFrame(class_feature_contributions[class_index]).values[0])
         indices = np.argsort(contributions)
         features_to_show = list(class_feature_contributions.keys())
-        plt.title(f"Feature contribution Based on 2 Factor Design Features Contribution")
+        plt.title(f"Feature Contribution Based on Factorial Design")
         plt.barh(range(len(features_to_show)), contributions[indices], color=color, align="center")
         plt.yticks(range(len(features_to_show)), np.array(features_to_show)[indices.astype(int)])
         plt.ylim([-1, len(features_to_show)])

@@ -58,9 +58,9 @@ class DoeXai:
         p = Predictor(data_modified_list, self.y_data, self.model)
         self.all_predictions_all_targets, self.all_predictions_df = p.create_tabular_gs_df()
 
-    def find_feature_contribution(self, user_list=None, run_fffs=False):
+    def find_feature_contribution(self, user_list=None, run_fffs=False, only_orig_features=False):
         y = self.all_predictions_df.mean(axis=1)
-        x = self._get_x_for_feature_contribution(user_list)
+        x = self._get_x_for_feature_contribution(user_list, only_orig_features)
         m, selected_features_x = self._fit_linear_approximation(x, y, run_fffs)
         return self._create_contribution(m, selected_features_x)
 
@@ -93,12 +93,15 @@ class DoeXai:
 
         return m, selected_features_x
 
-    def _get_x_for_feature_contribution(self, user_list=None):
+    def _get_x_for_feature_contribution(self, user_list=None, only_orig_features=False):
         x = self.zeds_df.copy()
         try:
             x.columns = self.feature_names
         except:
             pass
+
+        if only_orig_features:
+            return x
 
         if user_list:
             for new_feature in user_list:
