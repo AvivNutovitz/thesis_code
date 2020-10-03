@@ -16,7 +16,11 @@ class Predictor:
             all_predictions_all_targets.append(case_predictions)
             case_predictions_one_target = []
             for v in case_predictions.iterrows():
-                case_predictions_one_target.append(v[1][self.target_df[v[0]]])
+                tmp = v[1][self.target_df[v[0]]]
+                if isinstance(tmp, float):
+                    case_predictions_one_target.append(tmp)
+                elif isinstance(tmp, pd.Series):
+                    case_predictions_one_target.append(tmp.values[0])
             all_predictions_one_target.append(case_predictions_one_target)
 
         return all_predictions_all_targets, pd.DataFrame(all_predictions_one_target)
