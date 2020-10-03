@@ -1,11 +1,11 @@
+# --- Imports
 from utils import *
 from doe_xai import DoeXai
 from plotter import Plotter
 
-
 # thanks to - https://www.kaggle.com/madz2000/text-classification-using-keras-nb-97-accuracy for the preprocess and model training
 
-# --- imports
+# --- Other imports
 import string
 from nltk.corpus import stopwords, wordnet
 from nltk import pos_tag
@@ -41,8 +41,8 @@ def lemmatize_words(text):
     return " ".join(final_text)
 
 
-# --- start here
-X, y = load_data('fake_job_posting', size=1000)
+# --- Start Here
+X, y = load_data('fake_job_posting', size=2000)
 
 # --- Data Prepossess
 stop = set(stopwords.words('english'))
@@ -53,7 +53,7 @@ X = X.apply(lemmatize_words)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=seed)
 
-tv = TfidfVectorizer(min_df=0, max_df=1, use_idf=True, ngram_range=(1, 3), max_features=20)
+tv = TfidfVectorizer(min_df=0, max_df=1, use_idf=True, ngram_range=(1, 3), max_features=10)
 tv_train_reviews = tv.fit_transform(X_train)
 tv_test_reviews = tv.transform(X_test)
 
@@ -66,12 +66,19 @@ mnb_tfidf_score = accuracy_score(y_test, mnb_tfidf_predict)
 print(f'mnb tfidf test score : {mnb_tfidf_score}')
 
 
-# --- DOE
+# --- SHAP
 train_clean_data = pd.DataFrame(tv_train_reviews.toarray(), columns=tv.get_feature_names())
-dx = DoeXai(x_data=train_clean_data, y_data=y_train, model=mnb, feature_names=tv.get_feature_names())
+explainer = shap.LinearExplainer(mnb, train_clean_data)
+shap_values = explainer.shap_values(train_clean_data)
+shap.summary_plot(shap_values, train_clean_data, plot_type="bar")
 
-cont = dx.find_feature_contribution(user_list=[['90 seconds', 'bcg', 'contractor shall']])
+
+# --- DOE
+dx = DoeXai(x_data=train_clean_data, y_data=y_train, model=mnb, feature_names=tv.get_feature_names())
+# features to test: ['echoing', 'echoing green', 'epsilon', 'iota', 'lambda', 'omicron', 'pi', 'rho', 'sigmaf', 'tau']
+cont = dx.find_feature_contribution(only_orig_features=True)
 print(cont)
+
 
 # --- Plot
 p = Plotter(train_clean_data)
