@@ -1,5 +1,5 @@
 # --- Imports
-from utils import *
+from doe_utils import load_data
 from doe_xai import DoeXai
 from plotter import Plotter
 
@@ -14,6 +14,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score
+import pandas as pd
+import shap
 seed = 42
 
 
@@ -58,34 +60,35 @@ def create_fake_job_posting_data_and_tv(size=2000):
     return tv_train_reviews, y_train, tv_test_reviews, y_test, tv
 
 
-# --- Data Prepossess
-train_reviews, y_train, test_reviews, y_test, tv = create_fake_job_posting_data_and_tv()
+if __name__ == '__main__':
+    # --- Data Prepossess
+    train_reviews, y_train, test_reviews, y_test, tv = create_fake_job_posting_data_and_tv()
 
-# --- Model Training
-mnb = MultinomialNB()
-mnb_tfidf = mnb.fit(train_reviews, y_train)
+    # --- Model Training
+    mnb = MultinomialNB()
+    mnb_tfidf = mnb.fit(train_reviews, y_train)
 
-mnb_tfidf_predict = mnb.predict(test_reviews)
-mnb_tfidf_score = accuracy_score(y_test, mnb_tfidf_predict)
-print(f'mnb tfidf test score : {mnb_tfidf_score}')
-
-
-# --- SHAP
-train_clean_data = pd.DataFrame(train_reviews.toarray(), columns=tv.get_feature_names())
-explainer = shap.LinearExplainer(mnb, train_clean_data)
-shap_values = explainer.shap_values(train_clean_data)
-shap.summary_plot(shap_values, train_clean_data, plot_type="bar")
+    mnb_tfidf_predict = mnb.predict(test_reviews)
+    mnb_tfidf_score = accuracy_score(y_test, mnb_tfidf_predict)
+    print(f'mnb tfidf test score : {mnb_tfidf_score}')
 
 
-# --- DOE
-dx = DoeXai(x_data=train_clean_data, y_data=y_train, model=mnb, feature_names=tv.get_feature_names())
-# features to test: ['echoing', 'echoing green', 'epsilon', 'iota', 'lambda', 'omicron', 'pi', 'rho', 'sigmaf', 'tau']
-cont = dx.find_feature_contribution(only_orig_features=True)
-print(cont)
+    # --- SHAP
+    train_clean_data = pd.DataFrame(train_reviews.toarray(), columns=tv.get_feature_names())
+    explainer = shap.LinearExplainer(mnb, train_clean_data)
+    shap_values = explainer.shap_values(train_clean_data)
+    shap.summary_plot(shap_values, train_clean_data, plot_type="bar")
 
 
-# --- Plot
-p = Plotter(train_clean_data)
-p.plot_doe_feature_contribution(cont)
+    # --- DOE
+    dx = DoeXai(x_data=train_clean_data, y_data=y_train, model=mnb, feature_names=tv.get_feature_names())
+    # features to test: ['echoing', 'echoing green', 'epsilon', 'iota', 'lambda', 'omicron', 'pi', 'rho', 'sigmaf', 'tau']
+    cont = dx.find_feature_contribution(only_orig_features=True)
+    print(cont)
+
+
+    # --- Plot
+    p = Plotter(train_clean_data)
+    p.plot_doe_feature_contribution(cont)
 
 

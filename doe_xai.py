@@ -7,7 +7,7 @@ from design_creator import DesignCreator
 from data_modifier import DataModifier
 from predictor import Predictor
 from validator import Validator
-from utils import *
+from doe_utils import *
 
 
 class DoeXai:

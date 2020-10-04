@@ -72,6 +72,7 @@ def load_data(file_name, size=-1):
         df['text'] = df['title'] + ' ' + df['location'] + ' ' + df['department'] + ' ' + df['company_profile'] + ' ' + \
                      df['description'] + ' ' + df['requirements'] + ' ' + df['benefits'] + ' ' + df['employment_type'] \
                      + ' ' + df['required_education'] + ' ' + df['industry'] + ' ' + df['function']
+        return df['text'], df['fraudulent']
 
     elif file_name == 'hotel_bookings':
         X = df.drop(["is_canceled"], axis=1)
