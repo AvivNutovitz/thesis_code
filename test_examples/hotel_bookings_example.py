@@ -1,12 +1,13 @@
+# --- imports
 from test_examples import create_hotel_booking_data
 from doe_xai import DoeXai
 from plotter import Plotter
 
 # thanks to - https://www.kaggle.com/marcuswingen/eda-of-bookings-and-ml-to-predict-cancelations for the preprocess and model training
 
-# --- imports
+# --- Other imports
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, classification_report
 
 import shap
 seed = 42
@@ -21,6 +22,8 @@ if __name__ == '__main__':
     preds = model.predict_proba(X_test)
     score = roc_auc_score(y_test, [p[1] for p in preds])
     print(f"auc_score: {round(score, 4)}")
+    print("=" * 80)
+    print(classification_report(y_test, model.predict(X_test)))
 
     # --- SHAP
     explainer = shap.LinearExplainer(model, X_train)

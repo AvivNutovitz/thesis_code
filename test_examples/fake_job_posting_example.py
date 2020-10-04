@@ -7,7 +7,7 @@ from plotter import Plotter
 
 # --- Other imports
 from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 import pandas as pd
 import shap
 seed = 42
@@ -24,6 +24,8 @@ if __name__ == '__main__':
     mnb_tfidf_predict = mnb.predict(test_reviews)
     mnb_tfidf_score = accuracy_score(y_test, mnb_tfidf_predict)
     print(f'mnb tfidf test score : {mnb_tfidf_score}')
+    print("=" * 80)
+    print(classification_report(y_test, mnb_tfidf_predict))
 
     # --- SHAP
     train_clean_data = pd.DataFrame(train_reviews.toarray(), columns=tv.get_feature_names())

@@ -5,6 +5,7 @@ from plotter import Plotter
 
 # --- Other imports
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
 import shap
 seed = 42
 
@@ -18,7 +19,9 @@ if __name__ == '__main__':
     model.fit(X_train, y_train)
 
     test_score = model.score(X_test, y_test)
-    print(test_score)
+    print(f"model score: {test_score}")
+    print("=" * 80)
+    print(classification_report(y_test, model.predict(X_test)))
 
     # --- SHAP
     explainer = shap.LinearExplainer(model, X_train)

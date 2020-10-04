@@ -79,6 +79,13 @@ def load_data(file_name, size=-1):
         y = df["is_canceled"]
         return X, y
 
+    elif file_name == 'hr_employee_attrition':
+        target_map = {'Yes': 1, 'No': 0}
+        # Use the pandas apply method to numerically encode our attrition target variable
+        y = df["Attrition"].apply(lambda x: target_map[x])
+        X = df.drop(["Attrition"], axis=1)
+        return X, y
+
 
 def get_base():
     try:

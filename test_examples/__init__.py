@@ -18,7 +18,8 @@ seed = 42
 
 
 def create_fake_job_posting_data_and_tv(size=2000):
-    # thanks to - https://www.kaggle.com/madz2000/text-classification-using-keras-nb-97-accuracy for the preprocess and model training
+    # thanks to - https://www.kaggle.com/madz2000/text-classification-using-keras-nb-97-accuracy
+    # for the prepossess and model training
 
     # --- helper functions
     def get_simple_pos(tag):
@@ -59,7 +60,8 @@ def create_fake_job_posting_data_and_tv(size=2000):
 
 
 def create_hotel_booking_data(size=2000):
-    # thanks to - https://www.kaggle.com/marcuswingen/eda-of-bookings-and-ml-to-predict-cancelations for the preprocess and model training
+    # thanks to - https://www.kaggle.com/marcuswingen/eda-of-bookings-and-ml-to-predict-cancelations
+    # for the prepossess and model training
 
     # --- helper functions
     def get_clean_enc_cat_features(enc_cat_f, cat_f):
@@ -110,3 +112,28 @@ def create_wine_data(size=-1):
     return X_train, y_train, X_test, y_test
 
 
+def create_hr_employee_attrition_data(size=-1):
+    # thanks to -  https://www.kaggle.com/arthurtok/employee-attrition-via-ensemble-tree-based-methods
+    # for the prepossess and model training
+
+    X, y = load_data('hr_employee_attrition', size)
+
+    categorical = []
+    for col, value in X.iteritems():
+        if value.dtype == 'object':
+            categorical.append(col)
+
+    # Store the numerical columns in a list numerical
+    numerical = X.columns.difference(categorical)
+
+    # numerical = [u'Age', u'DailyRate', u'JobSatisfaction',
+    #              u'MonthlyIncome', u'PerformanceRating',
+    #              u'WorkLifeBalance', u'YearsAtCompany']
+
+    x_cat = X[categorical]
+    x_cat = pd.get_dummies(x_cat)
+    x_num = X[numerical]
+    x_final = pd.concat([x_num, x_cat], axis=1)
+
+    X_train, X_test, y_train, y_test = train_test_split(x_final, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
