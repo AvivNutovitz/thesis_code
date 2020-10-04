@@ -1,20 +1,12 @@
 # --- Imports
-from doe_utils import load_data
+from test_examples import create_wine_data
 from doe_xai import DoeXai
 from plotter import Plotter
 
 # --- Other imports
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
 import shap
 seed = 42
-
-
-# --- helper functions
-def create_wine_data(size=-1):
-    X, y = load_data('wine', size)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
-    return X_train, y_train, X_test, y_test
 
 
 if __name__ == '__main__':
