@@ -113,7 +113,6 @@ class DoeXai:
                         feature_value = feature_value * x[new_feature[index]]
                 x[feature_name] = feature_value
         else:
-            # list_of_columns_pairs = list(itertools.combinations(range(self.zeds_df.shape[1]), 2))
             list_of_columns_pairs = list(itertools.combinations(x.columns, 2))
             for pair in list_of_columns_pairs:
                 new_feature = str(pair[0]) + '-' + str(pair[1])

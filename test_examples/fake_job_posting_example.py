@@ -31,43 +31,47 @@ def get_simple_pos(tag):
         return wordnet.NOUN
 
 
-def lemmatize_words(text):
-    final_text = []
-    for i in text.split():
-        if i.strip().lower() not in stop:
-            pos = pos_tag([i.strip()])
-            word = lemmatizer.lemmatize(i.strip(), get_simple_pos(pos[0][1]))
-            final_text.append(word.lower())
-    return " ".join(final_text)
+def create_fake_job_posting_data_and_tv(size=2000):
 
+    def lemmatize_words(text):
+        final_text = []
+        for i in text.split():
+            if i.strip().lower() not in stop:
+                pos = pos_tag([i.strip()])
+                word = lemmatizer.lemmatize(i.strip(), get_simple_pos(pos[0][1]))
+                final_text.append(word.lower())
+        return " ".join(final_text)
 
-# --- Start Here
-X, y = load_data('fake_job_posting', size=2000)
+    X, y = load_data('fake_job_posting', size=size)
+
+    stop = set(stopwords.words('english'))
+    punctuation = list(string.punctuation)
+    stop.update(punctuation)
+    lemmatizer = WordNetLemmatizer()
+    X = X.apply(lemmatize_words)
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=seed)
+
+    tv = TfidfVectorizer(min_df=0, max_df=1, use_idf=True, ngram_range=(1, 3), max_features=10)
+    tv_train_reviews = tv.fit_transform(X_train)
+    tv_test_reviews = tv.transform(X_test)
+    return tv_train_reviews, y_train, tv_test_reviews, y_test, tv
+
 
 # --- Data Prepossess
-stop = set(stopwords.words('english'))
-punctuation = list(string.punctuation)
-stop.update(punctuation)
-lemmatizer = WordNetLemmatizer()
-X = X.apply(lemmatize_words)
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=seed)
-
-tv = TfidfVectorizer(min_df=0, max_df=1, use_idf=True, ngram_range=(1, 3), max_features=10)
-tv_train_reviews = tv.fit_transform(X_train)
-tv_test_reviews = tv.transform(X_test)
+train_reviews, y_train, test_reviews, y_test, tv = create_fake_job_posting_data_and_tv()
 
 # --- Model Training
 mnb = MultinomialNB()
-mnb_tfidf = mnb.fit(tv_train_reviews, y_train)
+mnb_tfidf = mnb.fit(train_reviews, y_train)
 
-mnb_tfidf_predict = mnb.predict(tv_test_reviews)
+mnb_tfidf_predict = mnb.predict(test_reviews)
 mnb_tfidf_score = accuracy_score(y_test, mnb_tfidf_predict)
 print(f'mnb tfidf test score : {mnb_tfidf_score}')
 
 
 # --- SHAP
-train_clean_data = pd.DataFrame(tv_train_reviews.toarray(), columns=tv.get_feature_names())
+train_clean_data = pd.DataFrame(train_reviews.toarray(), columns=tv.get_feature_names())
 explainer = shap.LinearExplainer(mnb, train_clean_data)
 shap_values = explainer.shap_values(train_clean_data)
 shap.summary_plot(shap_values, train_clean_data, plot_type="bar")
