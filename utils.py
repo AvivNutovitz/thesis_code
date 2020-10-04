@@ -4,7 +4,6 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import shap
 import os
-import itertools
 
 
 def create_output_means_of_classes_file(input_file_name, labeled_df):
@@ -57,20 +56,27 @@ def plot_feature_histograms(feature_index_histograms, feature_index):
     plt.show()
 
 
-def load_data(file_name, size):
+def load_data(file_name, size=-1):
     example_path = 'example_data'
     df = pd.read_csv(os.path.join(os.getcwd(), '..', f'{example_path}/{file_name}_data.csv'))
+    if size > -1:
+        df = df.iloc[0:size]
+
     if file_name == 'wine':
-        pass
+        y = df['y']
+        df = df.drop(columns=['y'])
+        return df, y
+
     elif file_name == 'fake_job_posting':
         df.fillna(" ", inplace=True)
         df['text'] = df['title'] + ' ' + df['location'] + ' ' + df['department'] + ' ' + df['company_profile'] + ' ' + \
                      df['description'] + ' ' + df['requirements'] + ' ' + df['benefits'] + ' ' + df['employment_type'] \
                      + ' ' + df['required_education'] + ' ' + df['industry'] + ' ' + df['function']
-        if size:
-            return df['text'].iloc[0:size], df['fraudulent'].iloc[0:size]
-        else:
-            return df['text'], df['fraudulent']
+
+    elif file_name == 'hotel_bookings':
+        X = df.drop(["is_canceled"], axis=1)
+        y = df["is_canceled"]
+        return X, y
 
 
 def get_base():
