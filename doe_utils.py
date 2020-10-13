@@ -91,6 +91,12 @@ def load_data(file_name, size=-1):
         y = df["__TARGET__"]
         return X, y
 
+    elif file_name == 'placement_full_class':
+        X = df[['gender', 'ssc_p', 'ssc_b', 'hsc_p', 'hsc_b', 'hsc_s', 'degree_p', 'degree_t', 'workex', 'etest_p',
+                'specialisation', 'mba_p']]
+        y = df['status']
+        return X, y
+
 
 def get_base():
     try:

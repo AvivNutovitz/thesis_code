@@ -9,7 +9,7 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -141,3 +141,23 @@ def create_nomao_data(size=10000):
 
     X_train, X_test, y_train, y_test = train_test_split(X, clean_y, random_state=seed)
     return X_train, y_train, X_test, y_test
+
+
+def create_placement_full_class_data(size=-1):
+    # thanks to - https://www.kaggle.com/vinayshaw/will-you-get-a-job-or-not-eda-prediction
+    # for the prepossess and model training
+
+    X, y = load_data('placement_full_class', size)
+
+    X["gender"] = X.gender.map({"M": 0, "F": 1})
+    X["ssc_b"] = X.ssc_b.map({"Others": 0, "Central": 1})
+    X["hsc_b"] = X.hsc_b.map({"Others": 0, "Central": 1})
+    X["hsc_s"] = X.hsc_s.map({"Commerce": 0, "Science": 1, "Arts": 2})
+    X["degree_t"] = X.degree_t.map({"Comm&Mgmt": 0, "Sci&Tech": 1, "Others": 2})
+    X["workex"] = X.workex.map({"No": 0, "Yes": 1})
+    X["specialisation"] = X.specialisation.map({"Mkt&HR": 0, "Mkt&Fin": 1})
+
+    y = y.map({"Not Placed": 0, "Placed": 1})
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
+
