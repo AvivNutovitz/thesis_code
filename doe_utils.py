@@ -86,6 +86,11 @@ def load_data(file_name, size=-1):
         X = df.drop(["Attrition"], axis=1)
         return X, y
 
+    elif file_name == 'nomao':
+        X = df.drop(["__TARGET__"], axis=1)
+        y = df["__TARGET__"]
+        return X, y
+
 
 def get_base():
     try:

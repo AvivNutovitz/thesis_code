@@ -8,7 +8,7 @@ matplotlib.style.use('classic')
 
 
 class Plotter():
-    def __init__(self, x_train):
+    def __init__(self, x_train, plot_top=20):
         # condition on x_data
         if isinstance(x_train, pd.DataFrame):
             self.x_data = x_train.values
@@ -17,6 +17,7 @@ class Plotter():
             raise ValueError(f"x_train can by pandas DataFrame ONLY, "f"but passed {type(x_train)}")
         assert len(self.feature_names) == x_train.shape[1]
         self.X_train = x_train
+        self.plot_top = plot_top
 
     # shap
     def plot_shap_values_linear_model(self, model):
@@ -31,22 +32,22 @@ class Plotter():
     # feature importance
     def plot_model_coef(self, model):
         plt.figure()
-        indices = np.argsort(model.coef_[0])
+        indices = np.argsort(model.coef_[0])[0:self.plot_top]
         features_to_show = self.feature_names
         plt.title("Model Feature importance/coefficient")
-        plt.barh(range(self.X_train.shape[1]), model.coef_[0][indices], color="b", align="center")
-        plt.yticks(range(self.X_train.shape[1]), np.array(features_to_show)[indices.astype(int)])
-        plt.ylim([-1, self.X_train.shape[1]])
+        plt.barh(range(self.plot_top), model.coef_[0][indices], color="b", align="center")
+        plt.yticks(range(self.plot_top), np.array(features_to_show)[indices.astype(int)])
+        plt.ylim([-1, self.plot_top])
         plt.show()
 
     def plot_model_importance(self, model):
         plt.figure()
-        indices = np.argsort(model.feature_importances_)
+        indices = np.argsort(model.feature_importances_)[0: self.plot_top]
         features_to_show = self.feature_names
         plt.title("Model Feature importance/coefficient")
-        plt.barh(range(self.X_train.shape[1]), model.feature_importances_[indices], color="b", align="center")
-        plt.yticks(range(self.X_train.shape[1]), np.array(features_to_show)[indices.astype(int)])
-        plt.ylim([-1, self.X_train.shape[1]])
+        plt.barh(range(self.plot_top), model.feature_importances_[indices], color="b", align="center")
+        plt.yticks(range(self.plot_top), np.array(features_to_show)[indices.astype(int)])
+        plt.ylim([-1, self.plot_top])
         plt.show()
 
     # doe contribution
@@ -54,10 +55,10 @@ class Plotter():
         plt.figure()
         contributions = np.array([np.abs(values) for key, values in class_feature_contributions.items()])
         # Contributions = np.abs(pd.DataFrame(class_feature_contributions[class_index]).values[0])
-        indices = np.argsort(contributions)
+        indices = np.argsort(contributions)[0: self.plot_top]
         features_to_show = list(class_feature_contributions.keys())
         plt.title(f"Feature Contribution Based on Factorial Design")
-        plt.barh(range(len(features_to_show)), contributions[indices], color=color, align="center")
-        plt.yticks(range(len(features_to_show)), np.array(features_to_show)[indices.astype(int)])
-        plt.ylim([-1, len(features_to_show)])
+        plt.barh(range(self.plot_top), contributions[indices], color=color, align="center")
+        plt.yticks(range(self.plot_top), np.array(features_to_show)[indices.astype(int)])
+        plt.ylim([-1, self.plot_top])
         plt.show()

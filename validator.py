@@ -42,5 +42,6 @@ class Validator:
             np.abs(pd.DataFrame(class_feature_contributions_global['global']).values[0]))
         return stats.kendalltau(shap_feature_order, contributions_features_order)
 
-    def _run_kendalltau_test(self, d1, d2, key):
+    @staticmethod
+    def _run_kendalltau_test(d1, d2, key):
         return stats.kendalltau(d1[key], d2[key])

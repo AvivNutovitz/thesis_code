@@ -126,14 +126,18 @@ def create_hr_employee_attrition_data(size=-1):
     # Store the numerical columns in a list numerical
     numerical = X.columns.difference(categorical)
 
-    # numerical = [u'Age', u'DailyRate', u'JobSatisfaction',
-    #              u'MonthlyIncome', u'PerformanceRating',
-    #              u'WorkLifeBalance', u'YearsAtCompany']
-
     x_cat = X[categorical]
     x_cat = pd.get_dummies(x_cat)
     x_num = X[numerical]
     x_final = pd.concat([x_num, x_cat], axis=1)
 
     X_train, X_test, y_train, y_test = train_test_split(x_final, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
+
+
+def create_nomao_data(size=10000):
+    X, y = load_data('nomao', size)
+    clean_y = np.array([int(yy) - 1 for yy in y])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, clean_y, random_state=seed)
     return X_train, y_train, X_test, y_test

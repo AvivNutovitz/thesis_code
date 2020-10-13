@@ -34,8 +34,6 @@ if __name__ == '__main__':
     shap_values = explainer.shap_values(X_train)
     shap.summary_plot(shap_values, X_train, plot_type="bar")
 
-    print(X_train.shape)
-    print(len(X_train.columns))
     # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
     # features_to_test = [['company', 'agent'], ['company', 'agent', 'children']]
