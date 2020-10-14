@@ -97,6 +97,18 @@ def load_data(file_name, size=-1):
         y = df['status']
         return X, y
 
+    elif file_name == 'rain_weather_aus':
+        df = df.drop(columns=['Sunshine', 'Evaporation', 'Cloud3pm', 'Cloud9am', 'Location', 'RISK_MM', 'Date'], axis=1)
+        df = df.dropna(how='any')
+        X = df.loc[:, df.columns != 'RainTomorrow']
+        y = df['RainTomorrow']
+        return X, y
+
+    else:
+        raise ValueError(f"file name can be one of the following: wine, fake_job_posting, hotel_bookings, "
+                         f"hr_employee_attrition, nomao, placement_full_class or rain_weather_aus."
+                             f"file_name that passed is {type(file_name)}")
+
 
 def get_base():
     try:

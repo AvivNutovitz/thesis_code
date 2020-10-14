@@ -135,7 +135,3 @@ class DoeXai:
         # kendalltau_st_and_pv_global = v.get_kendalltau_st_and_pv_global(self.global_feature_contributions)
         # return kendalltau_st_and_pv_all_classes, kendalltau_st_and_pv_global
         return kendalltau_st_and_pv_all_classes
-
-    def match_feature_names_to_contributions(self):
-        # todo
-        pass

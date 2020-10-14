@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-import shap
-from scipy.sparse import csr_matrix
 import matplotlib.style
 import matplotlib.pyplot as plt
 matplotlib.style.use('classic')
@@ -31,16 +29,6 @@ class Plotter():
             else:
                 return self.plot_top
 
-    # shap
-    def plot_shap_values_linear_model(self, model):
-        shap_values = shap.LinearExplainer(model, self.X_train, nsamples=self.X_train.shape[0]).shap_values(
-            self.X_train)
-        shap.summary_plot(shap_values, self.X_train, plot_type="bar", feature_names=self.feature_names)
-
-    def plot_shap_values_tree_model(self, model):
-        shap_values = shap.TreeExplainer(model).shap_values(self.X_train)
-        shap.summary_plot(shap_values, self.X_train, plot_type="bar", feature_names=self.feature_names)
-
     # feature importance
     def plot_model_coef(self, model):
         plt.figure()
@@ -68,7 +56,6 @@ class Plotter():
     def plot_doe_feature_contribution(self, class_feature_contributions,  color='b'):
         plt.figure()
         contributions = np.array([np.abs(values) for key, values in class_feature_contributions.items()])
-        # Contributions = np.abs(pd.DataFrame(class_feature_contributions[class_index]).values[0])
         number_of_features = self._set_number_of_features(contributions)
         indices = np.argsort(contributions)[0: number_of_features]
         features_to_show = list(class_feature_contributions.keys())

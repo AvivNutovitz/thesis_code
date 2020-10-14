@@ -9,7 +9,7 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 import pandas as pd
@@ -158,6 +158,27 @@ def create_placement_full_class_data(size=-1):
     X["specialisation"] = X.specialisation.map({"Mkt&HR": 0, "Mkt&Fin": 1})
 
     y = y.map({"Not Placed": 0, "Placed": 1})
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
+
+
+def create_rain_weather_aus(size=4000):
+    # thanks to - https://www.kaggle.com/aninditapani/will-it-rain-tomorrow
+    # for the prepossess and model training
+
+    X, y = load_data('rain_weather_aus', size)
+
+    X['RainToday'].replace({'No': 0, 'Yes': 1}, inplace=True)
+    y = y.map({"No": 0, "Yes": 1})
+
+    # See unique values and convert them to int using pd.getDummies()
+    categorical_columns = ['WindGustDir', 'WindDir3pm', 'WindDir9am']
+
+    # transform the categorical columns
+    X = pd.get_dummies(X, columns=categorical_columns)
+    scaler = MinMaxScaler()
+    scaler.fit(X)
+    X = pd.DataFrame(scaler.transform(X), index=X.index, columns=X.columns)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
     return X_train, y_train, X_test, y_test
 

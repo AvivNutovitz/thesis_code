@@ -4,8 +4,8 @@ from doe_xai import DoeXai
 from plotter import Plotter
 
 # --- Other imports
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
 import shap
 seed = 42
 
@@ -15,16 +15,18 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_wine_data()
 
     # --- Model Training
-    model = LogisticRegression(random_state=seed)
+    model = RandomForestClassifier(n_estimators=500, random_state=seed)
     model.fit(X_train, y_train)
+    print("Fitting of Gradient Boosting Classifier finished")
 
-    test_score = model.score(X_test, y_test)
-    print(f"model score: {test_score}")
+    xgb_predict = model.predict(X_test)
+    xgb_score = accuracy_score(y_test, xgb_predict)
+    print(f'mnb tfidf test score : {xgb_score}')
     print("=" * 80)
     print(classification_report(y_test, model.predict(X_test)))
 
     # --- SHAP
-    explainer = shap.LinearExplainer(model, X_train)
+    explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_train)
     shap.summary_plot(shap_values, X_train, plot_type="bar")
 
