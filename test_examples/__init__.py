@@ -56,10 +56,13 @@ def create_fake_job_posting_data_and_tv(size=2000):
     tv = TfidfVectorizer(min_df=0, max_df=1, use_idf=True, ngram_range=(1, 3), max_features=10)
     tv_train_reviews = tv.fit_transform(X_train)
     tv_test_reviews = tv.transform(X_test)
-    return tv_train_reviews, y_train, tv_test_reviews, y_test, tv
+
+    train_clean_data = pd.DataFrame(tv_train_reviews.toarray(), columns=tv.get_feature_names())
+    test_clean_data = pd.DataFrame(tv_test_reviews.toarray(), columns=tv.get_feature_names())
+    return train_clean_data, y_train, test_clean_data, y_test
 
 
-def create_hotel_booking_data(size=2000):
+def create_hotel_booking_data(size=1000):
     # thanks to - https://www.kaggle.com/marcuswingen/eda-of-bookings-and-ml-to-predict-cancelations
     # for the prepossess and model training
 
@@ -103,7 +106,7 @@ def create_hotel_booking_data(size=2000):
     X_train = pd.DataFrame(X_train, columns=labels)
     X_test = pd.DataFrame(preprocessor.transform(X_test), columns=labels)
 
-    return X_train, y_train, X_test, y_test, labels
+    return X_train, y_train, X_test, y_test
 
 
 def create_wine_data(size=-1):

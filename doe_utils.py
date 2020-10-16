@@ -116,10 +116,12 @@ def get_base():
     except:
         return pd.read_csv(os.path.join(os.getcwd(), 'resources/base_36.csv'), header=None)
 
-# todo
-# def get_feature_names_combinations(feature_names):
-#     new_feature_names = []
-#     list_of_columns_pairs = list(itertools.combinations(feature_names, 2))
-#     for pair in list_of_columns_pairs:
-#         new_feature_names.append(str(pair[0]) + '-' + str(pair[1]))
-#     return new_feature_names
+
+def shap_values_to_df(shap_values, feature_names):
+    shap_sum = np.abs(shap_values).mean(axis=0)
+    if len(shap_sum.shape) > 1:
+        shap_sum = shap_sum.mean(axis=0)
+    importance_df = pd.DataFrame([feature_names, shap_sum.tolist()]).T
+    importance_df.columns = ['feature_name', 'shap_importance']
+    importance_df = importance_df.sort_values('shap_importance', ascending=False)
+    return importance_df
