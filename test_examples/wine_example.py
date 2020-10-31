@@ -2,6 +2,8 @@
 from test_examples import create_wine_data
 from doe_xai import DoeXai
 from plotter import Plotter
+from doe_utils import t_test_over_doe_shap_differences
+import pandas as pd
 
 # --- Other imports
 from sklearn.ensemble import RandomForestClassifier
@@ -17,27 +19,30 @@ if __name__ == '__main__':
     # --- Model Training
     model = RandomForestClassifier(n_estimators=500, random_state=seed)
     model.fit(X_train, y_train)
-    print("Fitting of Gradient Boosting Classifier finished")
+    print("Fitting of Random Forest Classifier finished")
 
     xgb_predict = model.predict(X_test)
     xgb_score = accuracy_score(y_test, xgb_predict)
-    print(f'mnb tfidf test score : {xgb_score}')
+    print(f'test score : {xgb_score}')
     print("=" * 80)
     print(classification_report(y_test, model.predict(X_test)))
 
     # --- SHAP
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_train)
-    shap.summary_plot(shap_values, X_train, plot_type="bar")
+    # shap.summary_plot(shap_values, X_train, plot_type="bar")
 
-    # --- DOE
+    # # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
-    # features: ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids',
-    # 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
-    cont = dx.find_feature_contribution(user_list=[['nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue'],
-                                                   ['alcohol', 'malic_acid', 'ash'], ['hue', 'proline']])
-    print(cont)
+    # # features: ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids',
+    # # 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
+    # # cont = dx.find_feature_contribution(user_list=[['nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue'],
+    # #                                                ['alcohol', 'malic_acid', 'ash'], ['hue', 'proline']])
+    cont = dx.find_feature_contribution(only_orig_features=True)
 
-    # --- Plot
-    p = Plotter(X_train)
-    p.plot_doe_feature_contribution(cont)
+    t_stat, pvalue = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=True)
+    print(pvalue)
+    #
+    # # --- Plot
+    # p = Plotter(X_train)
+    # p.plot_doe_feature_contribution(cont)

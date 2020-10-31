@@ -4,6 +4,10 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import shap
 import os
+from scipy import stats
+import random
+seed = 42
+random.seed(seed)
 
 
 def create_output_means_of_classes_file(input_file_name, labeled_df):
@@ -125,3 +129,20 @@ def shap_values_to_df(shap_values, feature_names):
     importance_df.columns = ['feature_name', 'shap_importance']
     importance_df = importance_df.sort_values('shap_importance', ascending=False)
     return importance_df
+
+
+def t_test_over_doe_shap_differences(shap_values, doe_contributions, feature_names, output_filename='', do_random=False):
+    shap_df = shap_values_to_df(shap_values, feature_names)
+    shap_df.shap_importance = (shap_df.shap_importance/max(shap_df.shap_importance)).apply(lambda x: max(x, 0))
+    if not do_random:
+        test_df = pd.DataFrame.from_dict(doe_contributions, orient='index').reset_index().rename(columns={
+            'index': 'feature_name', 0: 'test_importance'})
+        test_df.test_importance = (test_df.test_importance / max(test_df.test_importance)).apply(lambda x: max(x, 0))
+    else:
+        test_df = pd.DataFrame({'feature_name': feature_names,
+                                'test_importance': [random.random() for _ in range(len(feature_names))]})
+    full_df = shap_df.set_index('feature_name').join(test_df.set_index('feature_name'))
+    if len(output_filename) > 1:
+        full_df.to_csv(f't_test_over_doe_shap_differences_{output_filename}.csv')
+    return stats.ttest_ind(full_df.shap_importance, full_df.test_importance)
+

@@ -1,6 +1,8 @@
 # --- Imports
 from test_examples import create_rain_weather_aus
 from doe_xai import DoeXai
+from doe_utils import t_test_over_doe_shap_differences
+
 from plotter import Plotter
 
 # thanks to - https://www.kaggle.com/aninditapani/will-it-rain-tomorrow for the prepossess and model training
@@ -31,7 +33,7 @@ if __name__ == '__main__':
     # --- SHAP
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_train)
-    shap.summary_plot(shap_values, X_train, plot_type="bar")
+    # shap.summary_plot(shap_values, X_train, plot_type="bar")
 
     # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
@@ -46,10 +48,18 @@ if __name__ == '__main__':
     # 'WindDir3pm_WSW', 'WindDir9am_E', 'WindDir9am_ENE', 'WindDir9am_ESE', 'WindDir9am_N', 'WindDir9am_NE',
     # 'WindDir9am_NNE', 'WindDir9am_NNW', 'WindDir9am_NW', 'WindDir9am_S', 'WindDir9am_SE', 'WindDir9am_SSE',
     # 'WindDir9am_SSW', 'WindDir9am_SW', 'WindDir9am_W', 'WindDir9am_WNW', 'WindDir9am_WSW']
-    cont = dx.find_feature_contribution(user_list=[['MinTemp', 'MaxTemp', 'Rainfall'], ['Rainfall', 'WindGustSpeed'],
-                                                   ['Temp9am', 'Temp3pm', 'RainToday', 'WindGustDir_E']])
-    print(cont)
+    # cont = dx.find_feature_contribution(user_list=[['MinTemp', 'MaxTemp', 'Rainfall'], ['Rainfall', 'WindGustSpeed'],
+    #                                                ['Temp9am', 'Temp3pm', 'RainToday', 'WindGustDir_E']])
+    # print(cont)
+
+    cont = dx.find_feature_contribution(only_orig_features=True)
+
+    # t_stat, pvalue = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=True)
+    # print(pvalue)
+    #
+    # t_stat, pvalue = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=False)
+    # print(pvalue)
 
     # --- Plot
-    p = Plotter(X_train)
-    p.plot_doe_feature_contribution(cont)
+    # p = Plotter(X_train)
+    # p.plot_doe_feature_contribution(cont)
