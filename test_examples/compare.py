@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # ----------------------------
 
     all_data_set_names = ['fake_job_posting', 'rain_weather_aus', 'placement_full_class', 'nomao', 'wine',
-                          'hotel_booking', 'hr_employee_attrition', 'cervical_cancer', 'glass']
+                          'hotel_booking', 'hr_employee_attrition', 'cervical_cancer', 'glass', 'nasa']
 
     # fake_job_posting
     fake_job_posting_X_train, fake_job_posting_y_train, fake_job_posting_X_test, fake_job_posting_y_test = \
