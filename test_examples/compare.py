@@ -5,6 +5,8 @@ from doe_utils import shap_values_to_df, t_test_over_doe_shap_differences
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 import shap
 import scipy.stats as stats
@@ -78,8 +80,12 @@ if __name__ == '__main__':
     # ----- Run Experiment ---------
     # ------------------------------
 
-    list_of_models = [LogisticRegression(), MultinomialNB(), SVC(kernel='linear', probability=True)]
-    list_of_models_names = ['LR', 'MNB', 'SVM']
+    list_of_models = [LogisticRegression(),
+                      MultinomialNB(),
+                      SVC(kernel='linear', probability=True),
+                      DecisionTreeClassifier(),
+                      RandomForestClassifier(n_estimators=50)]
+    list_of_models_names = ['LR', 'MNB', 'SVM', 'DTC', 'RF']
 
     assert len(all_X_train) == len(all_y_train) == len(all_data_set_names) == 7
 
@@ -110,6 +116,11 @@ if __name__ == '__main__':
             if model_name in ['LR', 'MNB', 'SVM']:
                 print(f"    train LinearExplainer on {model_name}")
                 explainer = shap.LinearExplainer(model, X_train)
+                shap_values = explainer.shap_values(X_train)
+
+            elif model_name in ['DTC', 'RF']:
+                print(f"    train TreeExplainer on {model_name}")
+                explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(X_train)
 
             shap_values_as_df = shap_values_to_df(shap_values, list(X_train.columns))
