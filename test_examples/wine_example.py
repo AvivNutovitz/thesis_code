@@ -30,19 +30,15 @@ if __name__ == '__main__':
     # --- SHAP
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_train)
-    # shap.summary_plot(shap_values, X_train, plot_type="bar")
+    shap.summary_plot(shap_values, X_train, plot_type="bar")
 
     # # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
-    # # features: ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids',
-    # # 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
-    # # cont = dx.find_feature_contribution(user_list=[['nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue'],
-    # #                                                ['alcohol', 'malic_acid', 'ash'], ['hue', 'proline']])
-    cont = dx.find_feature_contribution(only_orig_features=True)
+    # features: ['alcohol', 'malic_acid', 'ash', 'alcalinity_of_ash', 'magnesium', 'total_phenols', 'flavanoids',
+    # 'nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue', 'od280/od315_of_diluted_wines', 'proline']
+    cont = dx.find_feature_contribution(user_list=[['nonflavanoid_phenols', 'proanthocyanins', 'color_intensity', 'hue'],
+                                                   ['alcohol', 'malic_acid', 'ash'], ['hue', 'proline']])
 
-    t_stat, pvalue = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=True)
-    print(pvalue)
-    #
-    # # --- Plot
-    # p = Plotter(X_train)
-    # p.plot_doe_feature_contribution(cont)
+    # --- Plot
+    p = Plotter(X_train)
+    p.plot_doe_feature_contribution(cont)

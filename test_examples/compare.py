@@ -1,7 +1,7 @@
 # --- Imports
 from doe_xai import DoeXai
 from test_examples import *
-from doe_utils import shap_values_to_df
+from doe_utils import shap_values_to_df, t_test_over_doe_shap_differences
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
@@ -19,6 +19,8 @@ if __name__ == '__main__':
     final_results_kendalltau = {}
     final_results_pvalues_top_5 = {}
     final_results_kendalltau_top_5 = {}
+    final_results_t_test_dfx_vs_shap_pvalues = {}
+    final_results_t_test_dfx_vs_random_pvalues = {}
 
     # ----------------------------
     # ----- get all the data -----
@@ -88,6 +90,8 @@ if __name__ == '__main__':
         dataset_results_pvalues = []
         dataset_results_kendalltau_top_5 = []
         dataset_results_pvalues_top_5 = []
+        dataset_results_t_test_dfx_vs_shap_pvalues = []
+        dataset_results_t_test_dfx_vs_random_pvalues = []
 
         for model, model_name in zip(list_of_models, list_of_models_names):
 
@@ -144,11 +148,29 @@ if __name__ == '__main__':
             print(kendalltau_top_5, p_value_top_5)
             print()
 
+            # ------------------
+            # ----- t test -----
+            # ------------------
+
+            _, pvalue_vs_shap = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=False)
+            dataset_results_t_test_dfx_vs_shap_pvalues.append(pvalue_vs_shap)
+            print(f"    run t_test over doe and shap differences")
+            print(pvalue_vs_shap)
+
+            _, pvalue_vs_random = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=True)
+            dataset_results_t_test_dfx_vs_random_pvalues.append(pvalue_vs_random)
+            print(f"    run t_test over doe and random differences")
+            print(pvalue_vs_random)
+            print()
+
         final_results_pvalues[data_set_name] = dataset_results_pvalues
         final_results_kendalltau[data_set_name] = dataset_results_kendalltau
 
         final_results_pvalues_top_5[data_set_name] = dataset_results_pvalues_top_5
         final_results_kendalltau_top_5[data_set_name] = dataset_results_kendalltau_top_5
+
+        final_results_t_test_dfx_vs_shap_pvalues[data_set_name] = dataset_results_t_test_dfx_vs_shap_pvalues
+        final_results_t_test_dfx_vs_random_pvalues[data_set_name] = dataset_results_t_test_dfx_vs_random_pvalues
 
     final_results_pvalues_df = pd.DataFrame.from_dict(final_results_pvalues, orient='index',
                                                       columns=list_of_models_names)
@@ -160,9 +182,19 @@ if __name__ == '__main__':
     final_results_kendalltau_df_top_5 = pd.DataFrame.from_dict(final_results_kendalltau_top_5, orient='index',
                                                          columns=list_of_models_names)
 
-    if OUTPUT_FILES:
-        final_results_pvalues_df.to_csv('final_results_pvalues_df.csv')
-        final_results_kendalltau_df.to_csv('final_results_kendalltau_df.csv')
+    final_results_t_test_dfx_vs_shap_pvalues_df = pd.DataFrame.from_dict(final_results_t_test_dfx_vs_shap_pvalues,
+                                                                         orient='index', columns=list_of_models_names)
+    final_results_t_test_dfx_vs_random_pvalues_df = pd.DataFrame.from_dict(final_results_t_test_dfx_vs_random_pvalues,
+                                                                           orient='index', columns=list_of_models_names)
 
-        final_results_pvalues_df_top_5.to_csv('final_results_pvalues_df_top_5.csv')
-        final_results_kendalltau_df_top_5.to_csv('final_results_kendalltau_df_top_5.csv')
+    if OUTPUT_FILES:
+        final_results_pvalues_df.to_csv('final_results_pvalues_df.csv', index=False)
+        final_results_kendalltau_df.to_csv('final_results_kendalltau_df.csv', index=False)
+
+        final_results_pvalues_df_top_5.to_csv('final_results_pvalues_df_top_5.csv', index=False)
+        final_results_kendalltau_df_top_5.to_csv('final_results_kendalltau_df_top_5.csv', index=False)
+
+        final_results_t_test_dfx_vs_shap_pvalues_df.to_csv('final_results_t_test_dfx_vs_shap_pvalues_df.csv',
+                                                           index=False)
+        final_results_t_test_dfx_vs_random_pvalues_df.to_csv('final_results_t_test_dfx_vs_random_pvalues_df.csv',
+                                                           index=False)
