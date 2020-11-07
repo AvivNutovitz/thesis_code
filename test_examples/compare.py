@@ -152,6 +152,7 @@ if __name__ == '__main__':
             # ----- t test -----
             # ------------------
 
+            cont = dx.find_feature_contribution(only_orig_features=True)
             _, pvalue_vs_shap = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=False)
             dataset_results_t_test_dfx_vs_shap_pvalues.append(pvalue_vs_shap)
             print(f"    run t_test over doe and shap differences")

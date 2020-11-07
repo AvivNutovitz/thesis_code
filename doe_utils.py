@@ -133,11 +133,13 @@ def shap_values_to_df(shap_values, feature_names):
 
 def t_test_over_doe_shap_differences(shap_values, doe_contributions, feature_names, output_filename='', do_random=False):
     shap_df = shap_values_to_df(shap_values, feature_names)
-    shap_df.shap_importance = (shap_df.shap_importance/max(shap_df.shap_importance)).apply(lambda x: max(x, 0))
+    if max(shap_df.shap_importance) > 0:
+        shap_df.shap_importance = (shap_df.shap_importance/max(shap_df.shap_importance)).apply(lambda x: max(x, 0))
     if not do_random:
         test_df = pd.DataFrame.from_dict(doe_contributions, orient='index').reset_index().rename(columns={
             'index': 'feature_name', 0: 'test_importance'})
-        test_df.test_importance = (test_df.test_importance / max(test_df.test_importance)).apply(lambda x: max(x, 0))
+        if max(test_df.test_importance) > 0:
+            test_df.test_importance = (test_df.test_importance / max(test_df.test_importance)).apply(lambda x: max(x, 0))
     else:
         test_df = pd.DataFrame({'feature_name': feature_names,
                                 'test_importance': [random.random() for _ in range(len(feature_names))]})
