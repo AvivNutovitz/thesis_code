@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import shap
 import os
 from scipy import stats
+import re
 import random
 seed = 42
 random.seed(seed)
@@ -108,10 +109,35 @@ def load_data(file_name, size=-1):
         y = df['RainTomorrow']
         return X, y
 
+    elif file_name == 'cervical_cancer':
+        df = df.replace('?', np.nan)
+        df = df.rename(columns={'Biopsy': 'Cancer'})
+        df = df.apply(pd.to_numeric)
+        df = df.fillna(df.mean().to_dict())
+        X = df.drop('Cancer', axis=1)
+        y = df['Cancer']
+        return X, y
+
+    elif file_name == 'glass':
+        features = df.columns[:-1].tolist()
+        X = df[features]
+        y = df['Type']
+        return X, y
+
+    elif file_name == 'nasa':
+        df.columns = [c.replace(' ', '_') for c in df.columns]
+        df.drop(["Neo_Reference_ID", "Name", "Close_Approach_Date", "Epoch_Date_Close_Approach"
+                      , "Orbiting_Body", "Orbit_Determination_Date", "Equinox"], axis=1, inplace=True)
+        df.Hazardous = [1 if each == True else 0 for each in df.Hazardous]
+        y = df.Hazardous
+        X = df.drop(["Hazardous"], axis=1)
+        return X, y
+
     else:
         raise ValueError(f"file name can be one of the following: wine, fake_job_posting, hotel_bookings, "
-                         f"hr_employee_attrition, nomao, placement_full_class or rain_weather_aus."
-                             f"file_name that passed is {type(file_name)}")
+                         f"hr_employee_attrition, nomao, placement_full_class, rain_weather_aus, cervical_cancer, "
+                         f"glass or nasa. "
+                         f"file_name that passed is {type(file_name)}")
 
 
 def get_base():

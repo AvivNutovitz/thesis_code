@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # ----------------------------
 
     all_data_set_names = ['fake_job_posting', 'rain_weather_aus', 'placement_full_class', 'nomao', 'wine',
-                          'hotel_booking', 'hr_employee_attrition']
+                          'hotel_booking', 'hr_employee_attrition', 'cervical_cancer', 'glass']
 
     # fake_job_posting
     fake_job_posting_X_train, fake_job_posting_y_train, fake_job_posting_X_test, fake_job_posting_y_test = \
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # rain_weather_aus
     rain_weather_aus_X_train, rain_weather_aus_y_train, rain_weather_aus_X_test, rain_weather_aus_y_test = \
-        create_rain_weather_aus()
+        create_rain_weather_aus_data()
     print("finish load data rain_weather_aus")
 
     # placement_full_class
@@ -64,17 +64,34 @@ if __name__ == '__main__':
     hr_employee_attrition_y_test = create_hr_employee_attrition_data()
     print("finish load data hr_employee_attrition")
 
+    # cervical_cancer
+    cervical_cancer_X_train, cervical_cancer_y_train, cervical_cancer_X_test, cervical_cancer_y_test = \
+        create_cervical_cancer_data()
+    print("finish load data cervical_cancer")
+
+    # glass
+    glass_X_train, glass_y_train, glass_X_test, glass_y_test = create_glass_data()
+    print("finish load data glass")
+
+    # nasa
+    nasa_X_train, nasa_y_train, nasa_X_test, nasa_y_test = create_nasa_data()
+    print("finish load data nasa")
+
     all_X_train = [fake_job_posting_X_train, rain_weather_aus_X_train, placement_full_class_X_train, nomao_X_train,
-                   wine_X_train, hotel_booking_X_train, hr_employee_attrition_X_train]
+                   wine_X_train, hotel_booking_X_train, hr_employee_attrition_X_train, cervical_cancer_X_train,
+                   glass_X_train, nasa_X_train]
 
     all_X_test = [fake_job_posting_X_test, rain_weather_aus_X_test, placement_full_class_X_test, nomao_X_test,
-                   wine_X_test, hotel_booking_X_test, hr_employee_attrition_X_test]
+                  wine_X_test, hotel_booking_X_test, hr_employee_attrition_X_test, cervical_cancer_X_test,
+                  glass_X_test, nasa_X_test]
 
     all_y_train = [fake_job_posting_y_train, rain_weather_aus_y_train, placement_full_class_y_train, nomao_y_train,
-                   wine_y_train, hotel_booking_y_train, hr_employee_attrition_y_train]
+                   wine_y_train, hotel_booking_y_train, hr_employee_attrition_y_train, cervical_cancer_y_train,
+                   glass_y_train, nasa_y_train]
 
     all_y_test = [fake_job_posting_y_test, rain_weather_aus_y_test, placement_full_class_y_test, nomao_y_test,
-                   wine_y_test, hotel_booking_y_test, hr_employee_attrition_y_test]
+                  wine_y_test, hotel_booking_y_test, hr_employee_attrition_y_test, cervical_cancer_y_test,
+                  glass_y_test, nasa_y_test]
 
     # ------------------------------
     # ----- Run Experiment ---------
@@ -87,7 +104,7 @@ if __name__ == '__main__':
                       RandomForestClassifier(n_estimators=50)]
     list_of_models_names = ['LR', 'MNB', 'SVM', 'DTC', 'RF']
 
-    assert len(all_X_train) == len(all_y_train) == len(all_data_set_names) == 7
+    assert len(all_X_train) == len(all_y_train) == len(all_data_set_names) == 10
 
     for X_train, y_train, data_set_name in zip(all_X_train, all_y_train, all_data_set_names):
 

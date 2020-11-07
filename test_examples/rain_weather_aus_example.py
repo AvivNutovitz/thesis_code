@@ -1,5 +1,5 @@
 # --- Imports
-from test_examples import create_rain_weather_aus
+from test_examples import create_rain_weather_aus_data
 from doe_xai import DoeXai
 from plotter import Plotter
 
@@ -14,7 +14,7 @@ seed = 42
 
 if __name__ == '__main__':
     # --- Data Prepossess
-    X_train, y_train, X_test, y_test = create_rain_weather_aus()
+    X_train, y_train, X_test, y_test = create_rain_weather_aus_data()
 
     # --- Model Training
     model = GradientBoostingClassifier(n_estimators=500, random_state=seed)

@@ -6,7 +6,7 @@ import string
 from nltk.corpus import stopwords, wordnet
 from nltk import pos_tag
 from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
@@ -165,7 +165,7 @@ def create_placement_full_class_data(size=-1):
     return X_train, y_train, X_test, y_test
 
 
-def create_rain_weather_aus(size=4000):
+def create_rain_weather_aus_data(size=4000):
     # thanks to - https://www.kaggle.com/aninditapani/will-it-rain-tomorrow
     # for the prepossess and model training
 
@@ -183,5 +183,29 @@ def create_rain_weather_aus(size=4000):
     scaler.fit(X)
     X = pd.DataFrame(scaler.transform(X), index=X.index, columns=X.columns)
     X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
+
+
+def create_cervical_cancer_data(size=-1):
+    X, y = load_data('cervical_cancer', size)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
+
+
+def create_glass_data(size=-1):
+    X, y = load_data('glass', size)
+    # mapping y {1,2,3} -> {0, 1, 2}, {5, 6 , 7} -> {3, 4, 5}
+    y = y.apply(lambda x: x-1 if x < 5 else x-2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
+    return X_train, y_train, X_test, y_test
+
+
+def create_nasa_data(size=-1):
+    X, y = load_data('nasa', size)
+    columns = list(X.columns)
+    scale = MinMaxScaler()
+    X = scale.fit_transform(X)
+    X_train, X_test, y_train, y_test = train_test_split(pd.DataFrame(X, columns=columns),
+                                                        y, random_state=seed)
     return X_train, y_train, X_test, y_test
 
