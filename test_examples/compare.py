@@ -15,7 +15,7 @@ if __name__ == '__main__':
     # ---------------------------
     # ----- base parameters -----
     # ---------------------------
-
+    print("starting...")
     OUTPUT_FILES = True
     final_results_pvalues = {}
     final_results_kendalltau = {}
@@ -217,13 +217,11 @@ if __name__ == '__main__':
                                                                            orient='index', columns=list_of_models_names)
 
     if OUTPUT_FILES:
-        final_results_pvalues_df.to_csv('final_results_pvalues_df.csv', index=False)
-        final_results_kendalltau_df.to_csv('final_results_kendalltau_df.csv', index=False)
+        final_results_pvalues_df.to_csv('final_results_pvalues_df.csv')
+        final_results_kendalltau_df.to_csv('final_results_kendalltau_df.csv')
 
-        final_results_pvalues_df_top_5.to_csv('final_results_pvalues_df_top_5.csv', index=False)
-        final_results_kendalltau_df_top_5.to_csv('final_results_kendalltau_df_top_5.csv', index=False)
+        final_results_pvalues_df_top_5.to_csv('final_results_pvalues_df_top_5.csv')
+        final_results_kendalltau_df_top_5.to_csv('final_results_kendalltau_df_top_5.csv')
 
-        final_results_t_test_dfx_vs_shap_pvalues_df.to_csv('final_results_t_test_dfx_vs_shap_pvalues_df.csv',
-                                                           index=False)
-        final_results_t_test_dfx_vs_random_pvalues_df.to_csv('final_results_t_test_dfx_vs_random_pvalues_df.csv',
-                                                           index=False)
+        final_results_t_test_dfx_vs_shap_pvalues_df.to_csv('final_results_t_test_dfx_vs_shap_pvalues_df.csv')
+        final_results_t_test_dfx_vs_random_pvalues_df.to_csv('final_results_t_test_dfx_vs_random_pvalues_df.csv')
