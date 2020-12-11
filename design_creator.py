@@ -12,6 +12,7 @@ class DesignCreator:
     def __init__(self, feature_matrix, file_name=None):
         if file_name:
             self.design_df = pd.read_csv(file_name)
+            self.design_df.columns = self.design_df.columns.astype(int)
         else:
             self.create_design_from_feature_matrix(feature_matrix)
 
