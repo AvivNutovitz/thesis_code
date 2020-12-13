@@ -25,11 +25,11 @@ def create_output_means_of_classes_file(input_file_name, labeled_df):
     return pd.concat([pd.DataFrame(global_means, columns=['global']), class_means], axis=1)
 
 
-def create_output_contribution_file(class_feature_contributions, global_feature_contributions):
-    df_output = pd.DataFrame({key: np.abs(value[0]) for key, value in class_feature_contributions.items()})
-    df_output.columns = ['class_{}'.format(col) for col in list(df_output.columns)]
-    df_output['global'] = pd.DataFrame({key: np.abs(value[0]) for key, value in global_feature_contributions.items()})
-    return df_output
+def create_output_contribution_file(class_feature_contributions, file_name=None):
+    if not file_name:
+        return pd.DataFrame.from_dict(class_feature_contributions, orient='index').T
+    else:
+        pd.DataFrame.from_dict(class_feature_contributions, orient='index').T.to_csv(file_name, index=False)
 
 
 def plot_feature_contributions_like_shap_values_from_df(df, image, to_plot=True):
