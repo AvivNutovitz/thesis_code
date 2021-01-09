@@ -235,7 +235,7 @@ if __name__ == '__main__':
             # dfx vs shap
             res4 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'shap_feature_importance')
 
-            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'stats_results_on_{data_set_name}_with_model_{model_name}.csv')
+            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'../examples_results/{data_set_name}/stats_results_on_with_model_{model_name}.csv')
 
         # build one data set (all models and all 4 tests across replications) per data set
         one_df_per_data_set = create_one_metric_df_per_data_set(run_dfs, list_of_models_names)

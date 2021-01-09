@@ -233,6 +233,7 @@ def lime_global_importance_to_df(model, X_train, y_train, num_explain=100):
 def f_score_pvalue_to_df(X_train, y_train):
     fs, pvalues = f_classif(X_train, y_train)
     f_pvalue_df = pd.DataFrame({'feature_name': X_train.columns, 'f_score_pvalue': pvalues})
+    f_pvalue_df['f_score_pvalue'] = f_pvalue_df['f_score_pvalue'].fillna(-1)
     f_pvalue_df = f_pvalue_df.sort_values('f_score_pvalue', ascending=True)
     return f_pvalue_df
 
@@ -240,6 +241,7 @@ def f_score_pvalue_to_df(X_train, y_train):
 def mutual_info_to_df(X_train, y_train):
     mutual_info = mutual_info_classif(X_train, y_train)
     mutual_info_df = pd.DataFrame({'feature_name': X_train.columns, 'mutual_info_score': mutual_info})
+    mutual_info_df['mutual_info_score'] = mutual_info_df['mutual_info_score'].fillna(-1)
     mutual_info_df = mutual_info_df.sort_values('mutual_info_score', ascending=False)
     return mutual_info_df
 
