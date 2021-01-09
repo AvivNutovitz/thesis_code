@@ -9,5 +9,5 @@ src/*.egg-info
 lib
 lib64
 .idea
-.examples_results
+.examples_results/*
 __pycache__
