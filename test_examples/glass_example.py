@@ -9,6 +9,7 @@ from plotter import Plotter
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 import shap
+from numpy import random
 seed = 42
 
 
@@ -18,13 +19,13 @@ if __name__ == '__main__':
 
     print(X_train.columns)
     # --- Model Training
-    model = LogisticRegression()
+    model = LogisticRegression(random_state=random.seed(seed))
     model.fit(X_train, y_train)
     print("Fitting of Logistic Regression finished")
 
-    xgb_predict = model.predict(X_test)
-    xgb_score = accuracy_score(y_test, xgb_predict)
-    print(f'test score : {xgb_score}')
+    lr_predict = model.predict(X_test)
+    lr_score = accuracy_score(y_test, lr_predict)
+    print(f'test score : {lr_score}')
     print("=" * 80)
     print(classification_report(y_test, model.predict(X_test)))
 
@@ -37,7 +38,8 @@ if __name__ == '__main__':
 
     # # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
-    # features: ['RI', 'Na', 'Mg', 'Al', 'Si', 'K', 'Ca', 'Ba', 'Fe'],
+    # features:
+    """['RI', 'Na', 'Mg', 'Al', 'Si', 'K', 'Ca', 'Ba', 'Fe']"""
     cont = dx.find_feature_contribution(
         user_list=[['RI', 'Na', 'Mg'],
                    ['Ca', 'Ba', 'Fe'],

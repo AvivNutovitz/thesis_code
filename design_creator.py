@@ -49,8 +49,8 @@ class DesignCreator:
         return [1 if char == '+' else -1 for char in [char for char in row]]
 
     def _create_base_design(self):
-        base = get_base()
-        self.design_df = pd.DataFrame.from_records(base[0].apply(lambda x: self.clean_row(x)))
+        # self.design_df = pd.DataFrame.from_records(base[0].apply(lambda x: self.clean_row(x)))
+        self.design_df = get_base()
 
     def create_design_from_feature_matrix(self, feature_matrix):
         self._create_base_design()
@@ -58,7 +58,7 @@ class DesignCreator:
         self._select_matrix_columns(feature_matrix)
 
     def _doubling(self, feature_matrix):
-        while self.design_df.shape[1] < feature_matrix.shape[1]:
+        while self.design_df.shape[1] < feature_matrix.shape[1] + 1:
             self.design_df = self._doubling_step()
 
     def _doubling_step(self):
@@ -69,6 +69,7 @@ class DesignCreator:
         return pd.DataFrame(res)
 
     def _select_matrix_columns(self, feature_matrix):
+        self.design_df = self.design_df[[i for i in list(self.design_df.columns) if int(i) > 0]]
         selected_columns = random.choices(list(self.design_df.columns), k=feature_matrix.shape[1])
         self.design_df = self.design_df[selected_columns]
         self.design_df.columns = list(range(0, self.design_df.shape[1]))

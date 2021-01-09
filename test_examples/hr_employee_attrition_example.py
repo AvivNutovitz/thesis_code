@@ -9,6 +9,7 @@ from plotter import Plotter
 import shap
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_auc_score, classification_report
+from numpy import random
 seed = 42
 
 
@@ -18,7 +19,7 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_hr_employee_attrition_data()
 
     # --- Model Training
-    model = GradientBoostingClassifier(n_estimators=500, random_state=seed)
+    model = GradientBoostingClassifier(n_estimators=500, random_state=random.seed(seed))
     model.fit(X_train, y_train)
     print("Fitting of Gradient Boosting Classifier finished")
     rf_probs = model.predict_proba(X_test)
@@ -36,9 +37,32 @@ if __name__ == '__main__':
 
     # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
-    # features_to_test = [['company', 'agent'], ['company', 'agent', 'children']]
+    # features:
+    """
+    ['Age', 'DailyRate', 'DistanceFromHome', 'Education', 'EmployeeCount',
+       'EmployeeNumber', 'EnvironmentSatisfaction', 'HourlyRate',
+       'JobInvolvement', 'JobLevel', 'JobSatisfaction', 'MonthlyIncome',
+       'MonthlyRate', 'NumCompaniesWorked', 'PercentSalaryHike',
+       'PerformanceRating', 'RelationshipSatisfaction', 'StandardHours',
+       'StockOptionLevel', 'TotalWorkingYears', 'TrainingTimesLastYear',
+       'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole',
+       'YearsSinceLastPromotion', 'YearsWithCurrManager',
+       'BusinessTravel_Non-Travel', 'BusinessTravel_Travel_Frequently',
+       'BusinessTravel_Travel_Rarely', 'Department_Human Resources',
+       'Department_Research & Development', 'Department_Sales',
+       'EducationField_Human Resources', 'EducationField_Life Sciences',
+       'EducationField_Marketing', 'EducationField_Medical',
+       'EducationField_Other', 'EducationField_Technical Degree',
+       'Gender_Female', 'Gender_Male', 'JobRole_Healthcare Representative',
+       'JobRole_Human Resources', 'JobRole_Laboratory Technician',
+       'JobRole_Manager', 'JobRole_Manufacturing Director',
+       'JobRole_Research Director', 'JobRole_Research Scientist',
+       'JobRole_Sales Executive', 'JobRole_Sales Representative',
+       'MaritalStatus_Divorced', 'MaritalStatus_Married',
+       'MaritalStatus_Single', 'Over18_Y', 'OverTime_No', 'OverTime_Yes']"""
     cont = dx.find_feature_contribution(only_orig_features=True)
     print(cont)
+    print(X_train.columns)
 
     # --- Plot
     p = Plotter(X_train)

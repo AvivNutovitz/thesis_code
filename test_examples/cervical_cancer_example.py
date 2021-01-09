@@ -9,6 +9,7 @@ from plotter import Plotter
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import shap
+from numpy import random
 seed = 42
 
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_cervical_cancer_data()
 
     # --- Model Training
-    model = RandomForestClassifier(n_estimators=500, random_state=seed)
+    model = RandomForestClassifier(n_estimators=500, random_state=random.seed(seed))
     model.fit(X_train, y_train)
     print("Fitting of Random Forest Classifier finished")
 
@@ -32,11 +33,11 @@ if __name__ == '__main__':
     shap_values = explainer.shap_values(X_train)
     shap.summary_plot(shap_values, X_train, plot_type="bar")
 
-    print(X_train.columns)
-
-    # # --- DOE
+    # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
-    # features: ['Age', 'Number of sexual partners', 'First sexual intercourse',
+    # features:
+    """
+    ['Age', 'Number of sexual partners', 'First sexual intercourse',
     #        'Num of pregnancies', 'Smokes', 'Smokes (years)', 'Smokes (packs/year)',
     #        'Hormonal Contraceptives', 'Hormonal Contraceptives (years)', 'IUD',
     #        'IUD (years)', 'STDs', 'STDs (number)', 'STDs:condylomatosis',
@@ -47,11 +48,12 @@ if __name__ == '__main__':
     #        'STDs:Hepatitis B', 'STDs:HPV', 'STDs: Number of diagnosis',
     #        'STDs: Time since first diagnosis', 'STDs: Time since last diagnosis',
     #        'Dx:Cancer', 'Dx:CIN', 'Dx:HPV', 'Dx', 'Hinselmann', 'Schiller',
-    #        'Citology'],
+    #        'Citology']"""
     cont = dx.find_feature_contribution(
         user_list=[['STDs: Time since first diagnosis', 'Age', 'Smokes', 'Smokes (years)'],
                    ['STDs: Number of diagnosis', 'STDs: Time since first diagnosis',
                     'STDs: Time since last diagnosis']])
+
 
     # --- Plot
     p = Plotter(X_train)

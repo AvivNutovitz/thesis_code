@@ -200,12 +200,7 @@ def create_glass_data(size=-1):
     return X_train, y_train, X_test, y_test
 
 
-def create_nasa_data(size=-1):
-    X, y = load_data('nasa', size)
-    columns = list(X.columns)
-    scale = MinMaxScaler()
-    X = scale.fit_transform(X)
-    X_train, X_test, y_train, y_test = train_test_split(pd.DataFrame(X, columns=columns),
-                                                        y, random_state=seed)
+def create_mobile_price_data(size=-1):
+    X, y = load_data('mobile_price', size)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=seed)
     return X_train, y_train, X_test, y_test
-

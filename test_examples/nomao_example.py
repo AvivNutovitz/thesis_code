@@ -7,6 +7,7 @@ from plotter import Plotter
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 import shap
+from numpy import random
 seed = 42
 
 
@@ -15,7 +16,7 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_nomao_data()
 
     # --- Model Training
-    model = LogisticRegression(random_state=seed)
+    model = LogisticRegression(random_state=random.seed(seed))
     model.fit(X_train, y_train)
 
     test_score = model.score(X_test, y_test)

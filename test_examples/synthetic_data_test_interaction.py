@@ -7,9 +7,9 @@ import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 import shap
+from numpy import *
 import numpy as np
 seed = 42
-np.random.seed(seed)
 
 
 # --- helper function
@@ -33,7 +33,7 @@ print(y.value_counts())
 X_train, X_test, y_train, y_test = train_test_split(df, y, random_state=seed)
 
 # --- Model Training
-model = LogisticRegression(random_state=seed)
+model = LogisticRegression(random_state=random.seed(seed))
 model.fit(X_train, y_train)
 
 test_score = model.score(X_test, y_test)

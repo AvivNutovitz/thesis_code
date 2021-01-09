@@ -1,35 +1,33 @@
 # --- Imports
 from doe_xai import DoeXai
 from test_examples import *
-from doe_utils import shap_values_to_df, t_test_over_doe_shap_differences
-
+from doe_utils import *
 from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 import shap
-import scipy.stats as stats
+from numpy import random
+seed = 42
 
 if __name__ == '__main__':
     # ---------------------------
     # ----- base parameters -----
     # ---------------------------
     print("starting...")
-    OUTPUT_FILES = True
-    final_results_pvalues = {}
-    final_results_kendalltau = {}
-    final_results_pvalues_top_5 = {}
-    final_results_kendalltau_top_5 = {}
-    final_results_t_test_dfx_vs_shap_pvalues = {}
-    final_results_t_test_dfx_vs_random_pvalues = {}
 
     # ----------------------------
     # ----- get all the data -----
     # ----------------------------
 
     all_data_set_names = ['fake_job_posting', 'rain_weather_aus', 'placement_full_class', 'nomao', 'wine',
-                          'hotel_booking', 'hr_employee_attrition', 'cervical_cancer', 'glass', 'nasa']
+                          'hotel_booking', 'hr_employee_attrition', 'cervical_cancer', 'glass', 'mobile_price']
+
+    # ----------------------------------
+    # ----- number of replications -----
+    # ----------------------------------
+
+    number_of_replications = 3
 
     # fake_job_posting
     fake_job_posting_X_train, fake_job_posting_y_train, fake_job_posting_X_test, fake_job_posting_y_test = \
@@ -73,155 +71,188 @@ if __name__ == '__main__':
     glass_X_train, glass_y_train, glass_X_test, glass_y_test = create_glass_data()
     print("finish load data glass")
 
-    # nasa
-    nasa_X_train, nasa_y_train, nasa_X_test, nasa_y_test = create_nasa_data()
-    print("finish load data nasa")
+    # mobile_price
+    mobile_price_X_train, mobile_price_y_train, mobile_price_X_test, mobile_price_y_test = create_mobile_price_data()
+    print("finish load data mobile_price")
 
     all_X_train = [fake_job_posting_X_train, rain_weather_aus_X_train, placement_full_class_X_train, nomao_X_train,
                    wine_X_train, hotel_booking_X_train, hr_employee_attrition_X_train, cervical_cancer_X_train,
-                   glass_X_train, nasa_X_train]
+                   glass_X_train, mobile_price_X_train]
 
     all_X_test = [fake_job_posting_X_test, rain_weather_aus_X_test, placement_full_class_X_test, nomao_X_test,
                   wine_X_test, hotel_booking_X_test, hr_employee_attrition_X_test, cervical_cancer_X_test,
-                  glass_X_test, nasa_X_test]
+                  glass_X_test, mobile_price_X_test]
 
     all_y_train = [fake_job_posting_y_train, rain_weather_aus_y_train, placement_full_class_y_train, nomao_y_train,
                    wine_y_train, hotel_booking_y_train, hr_employee_attrition_y_train, cervical_cancer_y_train,
-                   glass_y_train, nasa_y_train]
+                   glass_y_train, mobile_price_y_train]
 
     all_y_test = [fake_job_posting_y_test, rain_weather_aus_y_test, placement_full_class_y_test, nomao_y_test,
                   wine_y_test, hotel_booking_y_test, hr_employee_attrition_y_test, cervical_cancer_y_test,
-                  glass_y_test, nasa_y_test]
+                  glass_y_test, mobile_price_y_test]
+
+    print()
 
     # ------------------------------
     # ----- Run Experiment ---------
     # ------------------------------
 
-    list_of_models = [LogisticRegression(),
-                      MultinomialNB(),
-                      SVC(kernel='linear', probability=True),
-                      DecisionTreeClassifier(),
-                      RandomForestClassifier(n_estimators=50)]
-    list_of_models_names = ['LR', 'MNB', 'SVM', 'DTC', 'RF']
+    list_of_models_names = ['LR', 'SVM', 'DTC', 'RF']
 
     assert len(all_X_train) == len(all_y_train) == len(all_data_set_names) == 10
 
     for X_train, y_train, data_set_name in zip(all_X_train, all_y_train, all_data_set_names):
 
+        if not os.path.exists(f'../examples_results/{data_set_name}/'):
+            os.mkdir(f'../examples_results/{data_set_name}/')
+
         print(f'working on dataset {data_set_name}')
-        dataset_results_kendalltau = []
-        dataset_results_pvalues = []
-        dataset_results_kendalltau_top_5 = []
-        dataset_results_pvalues_top_5 = []
-        dataset_results_t_test_dfx_vs_shap_pvalues = []
-        dataset_results_t_test_dfx_vs_random_pvalues = []
 
-        for model, model_name in zip(list_of_models, list_of_models_names):
+        # ---------------------------
+        # ----- mutual_info ---------
+        # ---------------------------
 
-            # ----------------------------
-            # ----- build models ---------
-            # ----------------------------
+        mutual_info_df = mutual_info_to_df(X_train, y_train)
 
-            model.fit(X_train, y_train)
-            print(f"    finish fit model {model_name}")
+        # -----------------------
+        # ----- f_score ---------
+        # -----------------------
 
-            # ----------------
-            # ----- Shap -----
-            # ----------------
+        f_score_pvalue_df = f_score_pvalue_to_df(X_train, y_train)
 
-            shap_values = None
-            if model_name in ['LR', 'MNB', 'SVM']:
-                print(f"    train LinearExplainer on {model_name}")
-                explainer = shap.LinearExplainer(model, X_train)
-                shap_values = explainer.shap_values(X_train)
+        run_dfs = defaultdict(list)
 
-            elif model_name in ['DTC', 'RF']:
-                print(f"    train TreeExplainer on {model_name}")
-                explainer = shap.TreeExplainer(model)
-                shap_values = explainer.shap_values(X_train)
+        for replication_index in range(number_of_replications):
+            seed += replication_index
+            list_of_models = [LogisticRegression(random_state=random.seed(seed)),
+                              SVC(kernel='linear', probability=True, random_state=random.seed(seed)),
+                              DecisionTreeClassifier(random_state=random.seed(seed)),
+                              RandomForestClassifier(n_estimators=50, random_state=random.seed(seed))]
 
-            shap_values_as_df = shap_values_to_df(shap_values, list(X_train.columns))
-            shap_values_as_df = shap_values_as_df.sort_values(by='shap_importance', ascending=False)
+            print(f'    start replication index {replication_index}')
 
-            # -------------------
-            # ----- DOE XAI -----
-            # -------------------
+            for model, model_name in zip(list_of_models, list_of_models_names):
 
-            print(f"    finish shap, start DOE XAI")
-            dx = DoeXai(x_data=X_train, y_data=y_train, model=model)
-            cont = dx.find_feature_contribution(only_orig_features=True)
-            df_doe_importance = pd.DataFrame.from_dict(cont, orient='index').reset_index().\
-                rename(columns={'index': 'feature_name', 0: "doe_importance"})
-            df_doe_importance = df_doe_importance.sort_values(by='doe_importance', ascending=False)
+                # ----------------------------
+                # ----- build models ---------
+                # ----------------------------
 
-            # ---------------------------
-            # ----- kendalltau test -----
-            # ---------------------------
+                model.fit(X_train, y_train)
+                print(f"        finish fit model {model_name}, start Shap at ")
 
-            print(f"    run kendalltau_test on shap VS DOE XAI")
-            assert df_doe_importance.shape == shap_values_as_df.shape
-            kendalltau, p_value = stats.kendalltau(shap_values_as_df[['feature_name']],
-                                                   df_doe_importance[['feature_name']])
-            dataset_results_pvalues.append(p_value)
-            dataset_results_kendalltau.append(kendalltau)
-            print(kendalltau, p_value)
+                # ----------------
+                # ----- SHAP -----
+                # ----------------
+
+                shap_values = None
+                if model_name in ['LR', 'SVM']:
+                    print(f"        train LinearExplainer on {model_name}")
+                    explainer = shap.LinearExplainer(model, X_train)
+                    shap_values = explainer.shap_values(X_train)
+
+                elif model_name in ['DTC', 'RF']:
+                    print(f"        train TreeExplainer on {model_name}")
+                    explainer = shap.TreeExplainer(model)
+                    shap_values = explainer.shap_values(X_train)
+
+                shap_values_as_df = shap_values_to_df(shap_values, list(X_train.columns))
+
+                # -------------------
+                # ----- DOE XAI -----
+                # -------------------
+
+                print(f"        finish Shap, start dfx")
+                dx = DoeXai(x_data=X_train, y_data=y_train, model=model)
+                cont = dx.find_feature_contribution(only_orig_features=True)
+                dfx_importance_as_df = dfx_contribution_to_df(cont)
+
+                # ----------------------------------
+                # ----- PERMUTATION IMPORTANCE -----
+                # ----------------------------------
+
+                print(f"        finish dfx, start permutation importance")
+                permutation_importance_df = permutation_importance_to_df(model, X_train, y_train)
+
+                # ----------------------------------
+                # ----- MODEL BASED IMPORTANCE -----
+                # ----------------------------------
+
+                print(f"        finish permutation importance, start model feature importance")
+                if model_name in ['LR', 'SVM']:
+                    model_feature_importance = model.coef_
+                elif model_name in ['DTC', 'RF']:
+                    model_feature_importance = model.feature_importances_
+
+                model_feature_importance_df = model_feature_importance_to_df(model_feature_importance, X_train.columns)
+                print(f"        finish model feature importance, start random importance")
+
+                # -----------------------------
+                # ----- RANDOM IMPORTANCE -----
+                # -----------------------------
+
+                random_importance_df = random_importance_to_df(X_train.columns)
+                print(f"        finish run build importance")
+
+                # build one data set (all models and all 5 tests) per replication
+                run_df = pd.concat([shap_values_as_df.set_index('feature_name'),
+                                    dfx_importance_as_df.set_index('feature_name'),
+                                    permutation_importance_df.set_index('feature_name'),
+                                    model_feature_importance_df.set_index('feature_name'),
+                                    random_importance_df.set_index('feature_name')], axis=1)
+
+                run_df = run_df.reset_index()
+                run_df = run_df.rename(columns={'index': 'feature_name'})
+                run_dfs[model_name].append(run_df)
+
+                # output file per replication
+                run_df.to_csv(f'../examples_results/{data_set_name}/results_model_{model_name}_replication_{replication_index}.csv', index=False)
+
+                print(f"        finish model {model_name}")
+                print()
+
+            print(f'    finish replication index {replication_index}')
             print()
 
-            print(f"    run kendalltau_test on shap VS DOE XAI on top 5 features")
-            assert df_doe_importance.head().shape == shap_values_as_df.head().shape
-            kendalltau_top_5, p_value_top_5 = stats.kendalltau(shap_values_as_df.head()[['feature_name']],
-                                                   df_doe_importance.head()[['feature_name']])
-            dataset_results_pvalues_top_5.append(p_value_top_5)
-            dataset_results_kendalltau_top_5.append(kendalltau_top_5)
-            print(kendalltau_top_5, p_value_top_5)
-            print()
+        # -------------------------------------------------------------------------------------------------------
+        # ----- RUN t test, kendalltau, pearson, spearman per average feature importance across replication -----
+        # -------------------------------------------------------------------------------------------------------
 
-            # ------------------
-            # ----- t test -----
-            # ------------------
+        print(f'start run tests on data set: {data_set_name}')
+        print()
 
-            cont = dx.find_feature_contribution(only_orig_features=True)
-            _, pvalue_vs_shap = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=False)
-            dataset_results_t_test_dfx_vs_shap_pvalues.append(pvalue_vs_shap)
-            print(f"    run t_test over doe and shap differences")
-            print(pvalue_vs_shap)
+        for model_name in list_of_models_names:
+            t_dfs = run_dfs[model_name]
 
-            _, pvalue_vs_random = t_test_over_doe_shap_differences(shap_values, cont, X_train.columns, do_random=True)
-            dataset_results_t_test_dfx_vs_random_pvalues.append(pvalue_vs_random)
-            print(f"    run t_test over doe and random differences")
-            print(pvalue_vs_random)
-            print()
+            # dfx vs random
+            res1 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'random_feature_importance')
 
-        final_results_pvalues[data_set_name] = dataset_results_pvalues
-        final_results_kendalltau[data_set_name] = dataset_results_kendalltau
+            # dfx vs model feature importance
+            res2 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'model_feature_importance')
 
-        final_results_pvalues_top_5[data_set_name] = dataset_results_pvalues_top_5
-        final_results_kendalltau_top_5[data_set_name] = dataset_results_kendalltau_top_5
+            # dfx vs permutation feature importance
+            res3 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'permutation_feature_importance')
 
-        final_results_t_test_dfx_vs_shap_pvalues[data_set_name] = dataset_results_t_test_dfx_vs_shap_pvalues
-        final_results_t_test_dfx_vs_random_pvalues[data_set_name] = dataset_results_t_test_dfx_vs_random_pvalues
+            # dfx vs shap
+            res4 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'shap_feature_importance')
 
-    final_results_pvalues_df = pd.DataFrame.from_dict(final_results_pvalues, orient='index',
-                                                      columns=list_of_models_names)
-    final_results_kendalltau_df = pd.DataFrame.from_dict(final_results_kendalltau, orient='index',
-                                                         columns=list_of_models_names)
+            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'stats_results_on_{data_set_name}_with_model_{model_name}.csv')
 
-    final_results_pvalues_df_top_5 = pd.DataFrame.from_dict(final_results_pvalues_top_5, orient='index',
-                                                      columns=list_of_models_names)
-    final_results_kendalltau_df_top_5 = pd.DataFrame.from_dict(final_results_kendalltau_top_5, orient='index',
-                                                         columns=list_of_models_names)
+        # build one data set (all models and all 4 tests across replications) per data set
+        one_df_per_data_set = create_one_metric_df_per_data_set(run_dfs, list_of_models_names)
+        one_df_per_data_set.index = list(X_train.columns)
 
-    final_results_t_test_dfx_vs_shap_pvalues_df = pd.DataFrame.from_dict(final_results_t_test_dfx_vs_shap_pvalues,
-                                                                         orient='index', columns=list_of_models_names)
-    final_results_t_test_dfx_vs_random_pvalues_df = pd.DataFrame.from_dict(final_results_t_test_dfx_vs_random_pvalues,
-                                                                           orient='index', columns=list_of_models_names)
+        # avg dfx replications vs mutual_info
+        res5 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], set_data_for_statistical_tests(mutual_info_df['mutual_info_score']), 'dfx_feature_importance_mean', 'mutual_info_score')
 
-    if OUTPUT_FILES:
-        final_results_pvalues_df.to_csv('final_results_pvalues_df.csv')
-        final_results_kendalltau_df.to_csv('final_results_kendalltau_df.csv')
+        # avg dfx replications vs f_score
+        res6 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], set_data_for_statistical_tests(f_score_pvalue_df['f_score_pvalue']), 'dfx_feature_importance_mean', 'f_score_pvalue')
 
-        final_results_pvalues_df_top_5.to_csv('final_results_pvalues_df_top_5.csv')
-        final_results_kendalltau_df_top_5.to_csv('final_results_kendalltau_df_top_5.csv')
+        # output file per data set
+        output = pd.concat([res5, res6], axis=1)
+        output = output.fillna(-1)
+        output.to_csv(f'../examples_results/{data_set_name}/stats_results_on_{data_set_name}.csv')
+        one_df_per_data_set.to_csv(f'../examples_results/{data_set_name}/avg_metrics_results_on_{data_set_name}.csv')
 
-        final_results_t_test_dfx_vs_shap_pvalues_df.to_csv('final_results_t_test_dfx_vs_shap_pvalues_df.csv')
-        final_results_t_test_dfx_vs_random_pvalues_df.to_csv('final_results_t_test_dfx_vs_random_pvalues_df.csv')
+        print(f'finish run tests on data set: {data_set_name}')
+        print('------------------------------------------------')
+        print()

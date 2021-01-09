@@ -9,6 +9,7 @@ from plotter import Plotter
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 import shap
+from numpy import random
 seed = 42
 
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_placement_full_class_data()
 
     # --- Model Training
-    model = LogisticRegression(random_state=seed)
+    model = LogisticRegression(random_state=random.seed(seed))
     model.fit(X_train, y_train)
 
     test_score = model.score(X_test, y_test)
@@ -32,10 +33,10 @@ if __name__ == '__main__':
 
     # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
-    # features: ['ssc_p', 'mba_p', 'hsc_p', 'degree_p', 'degree_t', 'workex', 'gender', 'etest_p', 'hsc_p', 'hsc_b',
-    # 'specialisation']
+    # features:
+    """['ssc_p', 'mba_p', 'hsc_p', 'degree_p', 'degree_t', 'workex', 'gender', 'etest_p', 
+    'hsc_p', 'hsc_b', 'specialisation']"""
     cont = dx.find_feature_contribution(user_list=[['ssc_p', 'mba_p'], ['hsc_p', 'degree_p', 'degree_t']])
-    print(cont)
 
     # --- Plot
     p = Plotter(X_train)

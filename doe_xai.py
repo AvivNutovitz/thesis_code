@@ -72,10 +72,10 @@ class DoeXai:
         return contributions
 
     def _fit_linear_approximation(self, x, y, run_fffs):
-        m = LinearRegression()
+        m = LinearRegression(normalize=True)
         selected_features_x = list(x.columns)
         if run_fffs:
-            feature_selector = SequentialFeatureSelector(LinearRegression(),
+            feature_selector = SequentialFeatureSelector(LinearRegression(normalize=True),
                                                          k_features=max(int(np.sqrt(x.shape[1])), self.zeds_df.shape[1]),
                                                          forward=True,
                                                          verbose=2,
@@ -126,12 +126,3 @@ class DoeXai:
         self.zeds_df.to_csv(f'{output_files_prefix}_zeds_df.csv', index=False)
         self.all_predictions_df.to_csv(f'{output_files_prefix}_gs_df.csv', index=False)
 
-    def validate_doe_xai_results_vs_shap(self, feature_contributions):
-        shap_values = shap.LinearExplainer(self.model, self.x_data, nsamples=self.x_data.shape[0]).shap_values(
-            self.x_data)
-        # v = Validator(self.feature_names, shap_values, self.class_feature_contributions)
-        v = Validator(self.feature_names, shap_values, feature_contributions)
-        kendalltau_st_and_pv_all_classes = v.get_kendalltau_st_and_pv_all_classes()
-        # kendalltau_st_and_pv_global = v.get_kendalltau_st_and_pv_global(self.global_feature_contributions)
-        # return kendalltau_st_and_pv_all_classes, kendalltau_st_and_pv_global
-        return kendalltau_st_and_pv_all_classes

@@ -33,7 +33,8 @@ if __name__ == '__main__':
 
     # --- DOE
     dx = DoeXai(x_data=train_clean_reviews, y_data=y_train, model=mnb)
-    # features to test: ['echoing', 'echoing green', 'epsilon', 'iota', 'lambda', 'omicron', 'pi', 'rho', 'sigmaf', 'tau']
+    # features:
+    """['echoing', 'echoing green', 'epsilon', 'iota', 'lambda', 'omicron', 'pi', 'rho', 'sigmaf', 'tau']"""
     cont = dx.find_feature_contribution(only_orig_features=True)
     print(cont)
 

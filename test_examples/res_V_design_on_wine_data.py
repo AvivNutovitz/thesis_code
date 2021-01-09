@@ -8,6 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import shap
 import os
+from numpy import *
 seed = 42
 
 
@@ -16,7 +17,7 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_wine_data()
 
     # --- Model Training
-    model = RandomForestClassifier(n_estimators=500, random_state=seed)
+    model = RandomForestClassifier(n_estimators=500, random_state=random.seed(seed))
     model.fit(X_train, y_train)
     print("Fitting of Random Forest Classifier finished")
 

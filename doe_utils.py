@@ -5,7 +5,10 @@ import matplotlib.pyplot as plt
 import shap
 import os
 from scipy import stats
-import re
+import lime
+import lime.lime_tabular
+from sklearn.inspection import permutation_importance
+from sklearn.feature_selection import f_classif, mutual_info_classif
 import random
 seed = 42
 random.seed(seed)
@@ -124,27 +127,36 @@ def load_data(file_name, size=-1):
         y = df['Type']
         return X, y
 
-    elif file_name == 'nasa':
-        df.columns = [c.replace(' ', '_') for c in df.columns]
-        df.drop(["Neo_Reference_ID", "Name", "Close_Approach_Date", "Epoch_Date_Close_Approach"
-                      , "Orbiting_Body", "Orbit_Determination_Date", "Equinox"], axis=1, inplace=True)
-        df.Hazardous = [1 if each == True else 0 for each in df.Hazardous]
-        y = df.Hazardous
-        X = df.drop(["Hazardous"], axis=1)
+    elif file_name == 'mobile_price':
+        y = df.price_range
+        X = df.drop(["price_range"], axis=1)
         return X, y
 
     else:
         raise ValueError(f"file name can be one of the following: wine, fake_job_posting, hotel_bookings, "
                          f"hr_employee_attrition, nomao, placement_full_class, rain_weather_aus, cervical_cancer, "
-                         f"glass or nasa. "
+                         f"glass or mobile_price. "
                          f"file_name that passed is {type(file_name)}")
 
 
 def get_base():
     try:
-        return pd.read_csv(os.path.join(os.getcwd(), '..', 'resources/base_36.csv'), header=None)
+        return pd.read_csv(os.path.join(os.getcwd(), '..', 'resources/pb36.csv')) # header=None
     except:
-        return pd.read_csv(os.path.join(os.getcwd(), 'resources/base_36.csv'), header=None)
+        return pd.read_csv(os.path.join(os.getcwd(), 'resources/pb36.csv')) # header=None
+
+
+def random_importance_to_df(feature_names):
+    return  pd.DataFrame({'feature_name': feature_names,
+                          'random_feature_importance': [random.random() for _ in range(len(feature_names))]})
+
+
+def dfx_contribution_to_df(contribution):
+    dfx_df = pd.DataFrame.from_dict(contribution, orient='index')
+    dfx_df = dfx_df.reset_index()
+    dfx_df.columns = ['feature_name', 'dfx_feature_importance']
+    dfx_df = dfx_df.sort_values('dfx_feature_importance', ascending=False)
+    return dfx_df
 
 
 def shap_values_to_df(shap_values, feature_names):
@@ -152,25 +164,138 @@ def shap_values_to_df(shap_values, feature_names):
     if len(shap_sum.shape) > 1:
         shap_sum = shap_sum.mean(axis=0)
     importance_df = pd.DataFrame([feature_names, shap_sum.tolist()]).T
-    importance_df.columns = ['feature_name', 'shap_importance']
-    importance_df = importance_df.sort_values('shap_importance', ascending=False)
+    importance_df.columns = ['feature_name', 'shap_feature_importance']
+    importance_df = importance_df.sort_values('shap_feature_importance', ascending=False)
     return importance_df
 
 
-def t_test_over_doe_shap_differences(shap_values, doe_contributions, feature_names, output_filename='', do_random=False):
-    shap_df = shap_values_to_df(shap_values, feature_names)
-    if max(shap_df.shap_importance) > 0:
-        shap_df.shap_importance = (shap_df.shap_importance/max(shap_df.shap_importance)).apply(lambda x: max(x, 0))
-    if not do_random:
-        test_df = pd.DataFrame.from_dict(doe_contributions, orient='index').reset_index().rename(columns={
-            'index': 'feature_name', 0: 'test_importance'})
-        if max(test_df.test_importance) > 0:
-            test_df.test_importance = (test_df.test_importance / max(test_df.test_importance)).apply(lambda x: max(x, 0))
-    else:
-        test_df = pd.DataFrame({'feature_name': feature_names,
-                                'test_importance': [random.random() for _ in range(len(feature_names))]})
-    full_df = shap_df.set_index('feature_name').join(test_df.set_index('feature_name'))
-    if len(output_filename) > 1:
-        full_df.to_csv(f't_test_over_doe_shap_differences_{output_filename}.csv')
-    return stats.ttest_ind(full_df.shap_importance, full_df.test_importance)
+def model_feature_importance_to_df(model_feature_importance, feature_names):
+    if len(model_feature_importance.shape) > 1:
+        model_feature_importance = np.abs(model_feature_importance).mean(axis=0)
+    tmp = pd.DataFrame({feature_name: [feature_importance] for feature_name, feature_importance in
+                        zip(feature_names, model_feature_importance)}).T
+    tmp = tmp.reset_index()
+    tmp.columns = ['feature_name', 'model_feature_importance']
+    tmp = tmp.sort_values('model_feature_importance', ascending=False)
+    return tmp
 
+
+def permutation_importance_to_df(model, X, y):
+    results = permutation_importance(model, X, y, scoring='neg_mean_squared_error')
+    feature_importances = results.importances_mean
+    tmp = pd.DataFrame({feature_name: [feature_importance] for feature_name, feature_importance in
+                         zip(X.columns, feature_importances)}).T
+    tmp = tmp.reset_index()
+    tmp.columns = ['feature_name', 'permutation_feature_importance']
+    tmp = tmp.sort_values('permutation_feature_importance', ascending=False)
+    return tmp
+
+
+def lime_global_importance_to_df(model, X_train, y_train, num_explain=100):
+    # Creating the Lime Explainer
+    lime_explainer = lime.lime_tabular.LimeTabularExplainer(
+        X_train.values,
+        training_labels=y_train.values,
+        feature_names=X_train.columns.tolist(),
+        discretize_continuous=True,
+        discretizer="entropy",
+    )
+
+    importances = {feature_name: 0.0 for feature_name in X_train.columns}
+
+    # number of instances to generate explanations for
+    for i in range(num_explain):
+        exp = lime_explainer.explain_instance(X_train.iloc[i],
+                                              model.predict_proba,
+                                              num_features=X_train.shape[1],
+                                              )
+        exp_map = exp.as_map()
+
+        # get all feature labels of class index
+        feat = [exp_map[1][m][0] for m in range(len(exp_map[1]))]
+        # get all feature weights of class index
+        weight = [exp_map[1][m][1] for m in range(len(exp_map[1]))]
+
+        # sum the weights, for each feature individually
+        for m in range(len(feat)):
+            importances[list(X_train.columns)[m]] = importances[list(X_train.columns)[m]] + weight[m]
+
+            # normalize the distribution
+    for i in range(X_train.shape[1]):
+        importances[list(X_train.columns)[i]] = np.abs(importances[list(X_train.columns)[i]] / (num_explain * 1.0))
+
+    lime_df = pd.DataFrame.from_dict(importances, orient='index').reset_index()
+    lime_df.columns = ['feature_name', 'lime_feature_importance']
+    lime_df = lime_df.sort_values('lime_feature_importance', ascending=False)
+    return lime_df
+
+
+def f_score_pvalue_to_df(X_train, y_train):
+    fs, pvalues = f_classif(X_train, y_train)
+    f_pvalue_df = pd.DataFrame({'feature_name': X_train.columns, 'f_score_pvalue': pvalues})
+    f_pvalue_df = f_pvalue_df.sort_values('f_score_pvalue', ascending=True)
+    return f_pvalue_df
+
+
+def mutual_info_to_df(X_train, y_train):
+    mutual_info = mutual_info_classif(X_train, y_train)
+    mutual_info_df = pd.DataFrame({'feature_name': X_train.columns, 'mutual_info_score': mutual_info})
+    mutual_info_df = mutual_info_df.sort_values('mutual_info_score', ascending=False)
+    return mutual_info_df
+
+
+def set_data_for_statistical_tests(df):
+    try:
+        # df
+        df = df.set_index('feature_name')
+        col = df.columns[0]
+        if max(df[col]) > 0:
+            df[col] = df.values / max(df.values)
+    except:
+        # series
+        if max(df) > 0:
+            df = df.values / max(df.values)
+            df = pd.Series(df)
+    return df
+
+
+def create_col_mean_from_dfs(dfs, col):
+    return pd.concat([df[col] for df in dfs], axis=1).mean(axis=1)
+
+
+def run_4_tests(t1, t2, col1, col2):
+    t_stat, t_pvalue = stats.ttest_ind(t1, t2)
+    r_stat, r_pvalue = stats.pearsonr(t1, t2)
+    s_stat, s_pvalue = stats.spearmanr(t1, t2)
+    k_stat, k_pvalue = stats.kendalltau(t1, t2)
+    return pd.DataFrame({f'{col1}_vs_{col2}_stats': [t_stat, r_stat, s_stat, k_stat],
+                         f'{col1}_vs_{col2}_pvalue': [t_pvalue, r_pvalue, s_pvalue, k_pvalue]},
+                        index=['ttest', 'pearson', 'spearman', 'kendalltau'])
+
+
+def run_4_tests_on_list_of_dfs(dfs, first_col, second_col):
+    t1 = set_data_for_statistical_tests(create_col_mean_from_dfs(dfs, first_col))
+    t2 = set_data_for_statistical_tests(create_col_mean_from_dfs(dfs, second_col))
+    return run_4_tests(t1, t2, first_col, second_col)
+
+
+def create_one_metric_df_per_data_set(dfs, list_of_models_names):
+    dfx_dfs = []
+    permutation_feature_importance_dfs = []
+    model_feature_importance_dfs = []
+    shap_feature_importance_dfs = []
+    random_feature_importance_dfs = []
+    for model_name in list_of_models_names:
+        t_dfs = dfs[model_name]
+        dfx_dfs.append(set_data_for_statistical_tests(create_col_mean_from_dfs(t_dfs, 'dfx_feature_importance')))
+        permutation_feature_importance_dfs.append(set_data_for_statistical_tests(create_col_mean_from_dfs(t_dfs, 'permutation_feature_importance')))
+        model_feature_importance_dfs.append(set_data_for_statistical_tests(create_col_mean_from_dfs(t_dfs, 'model_feature_importance')))
+        shap_feature_importance_dfs.append(set_data_for_statistical_tests(create_col_mean_from_dfs(t_dfs, 'shap_feature_importance')))
+        random_feature_importance_dfs.append(set_data_for_statistical_tests(create_col_mean_from_dfs(t_dfs, 'random_feature_importance')))
+
+    all_data = pd.DataFrame({'dfx_feature_importance_mean': list(pd.concat(dfx_dfs, axis=1).mean(axis=1)),
+                             'permutation_feature_importance_mean': list(pd.concat(permutation_feature_importance_dfs, axis=1).mean(axis=1)),
+                             'model_feature_importance_mean': list(pd.concat(model_feature_importance_dfs, axis=1).mean(axis=1)),
+                             'shap_feature_importance_mean': list(pd.concat(shap_feature_importance_dfs, axis=1).mean(axis=1)),
+                             'random_feature_importance_mean': list(pd.concat(random_feature_importance_dfs, axis=1).mean(axis=1))})
+    return all_data
