@@ -235,23 +235,35 @@ if __name__ == '__main__':
             # dfx vs shap
             res4 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'shap_feature_importance')
 
-            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'../examples_results/{data_set_name}/stats_results_on_with_model_{model_name}.csv')
+            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'../examples_results/{data_set_name}/stats_results_on_model_{model_name}.csv')
 
         # build one data set (all models and all 4 tests across replications) per data set
         one_df_per_data_set = create_one_metric_df_per_data_set(run_dfs, list_of_models_names)
         one_df_per_data_set.index = list(X_train.columns)
 
-        # avg dfx replications vs mutual_info
+        # avg over models dfx vs mutual_info
         res5 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], set_data_for_statistical_tests(mutual_info_df['mutual_info_score']), 'dfx_feature_importance_mean', 'mutual_info_score')
 
-        # avg dfx replications vs f_score
+        # avg over models dfx vs f_score
         res6 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], set_data_for_statistical_tests(f_score_pvalue_df['f_score_pvalue']), 'dfx_feature_importance_mean', 'f_score_pvalue')
 
+        # avg over models dfx vs random_feature_importance
+        res7 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], one_df_per_data_set['random_feature_importance_mean'], 'dfx_feature_importance_mean', 'random_feature_importance_mean')
+
+        # avg over models dfx vs model_feature_importance
+        res8 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], one_df_per_data_set['model_feature_importance_mean'], 'dfx_feature_importance_mean', 'model_feature_importance_mean')
+
+        # avg over models dfx vs permutation_feature_importance
+        res9 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], one_df_per_data_set['permutation_feature_importance_mean'], 'dfx_feature_importance_mean', 'permutation_feature_importance_mean')
+
+        # avg over models dfx vs shap_feature_importance
+        res10 = run_4_tests(one_df_per_data_set['dfx_feature_importance_mean'], one_df_per_data_set['shap_feature_importance_mean'], 'dfx_feature_importance_mean', 'shap_feature_importance_mean')
+
         # output file per data set
-        output = pd.concat([res5, res6], axis=1)
+        output = pd.concat([res5, res6, res7, res8, res9, res10], axis=1)
         output = output.fillna(-1)
-        output.to_csv(f'../examples_results/{data_set_name}/stats_results_on_{data_set_name}.csv')
-        one_df_per_data_set.to_csv(f'../examples_results/{data_set_name}/avg_metrics_results_on_{data_set_name}.csv')
+        output.to_csv(f'../examples_results/{data_set_name}/final_stats_on_{data_set_name}.csv')
+        one_df_per_data_set.to_csv(f'../examples_results/{data_set_name}/final_feature_importance_on_{data_set_name}.csv')
 
         print(f'finish run tests on data set: {data_set_name}')
         print('------------------------------------------------')
