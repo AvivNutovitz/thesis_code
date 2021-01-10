@@ -85,7 +85,7 @@ class DoeXai:
 
             features = feature_selector.fit(x, y)
             selected_columns = list(features.k_feature_names_)
-            selected_columns.extend(self.zeds_df.columns.astype(str))
+            selected_columns.extend([list(x.columns)[i] for i in list(self.zeds_df.columns.astype(int))])
             selected_features_x = pd.DataFrame(x)[set(selected_columns)]
             m.fit(selected_features_x, y)
         else:

@@ -45,38 +45,3 @@ if __name__ == '__main__':
     # --- Plot
     p = Plotter(X_train)
     p.plot_doe_feature_contribution(cont)
-
-    # f_score_pvalue_df = f_score_pvalue_to_df(X_train, y_train)
-    #
-    # mutual_info_df = mutual_info_to_df(X_train, y_train)
-    #
-    # print(f_score_pvalue_df)
-    # print(set_data_for_statistical_tests(f_score_pvalue_df))
-    # print()
-    #
-    # print(mutual_info_df)
-    # print(set_data_for_statistical_tests(mutual_info_df))
-    # print()
-    #
-    # model_feature_importance_df = model_feature_importance_to_df(model.feature_importances_, X_train.columns)
-    # print(model_feature_importance_df)
-    # print(set_data_for_statistical_tests(model_feature_importance_df))
-    #
-    # print()
-    # dfx_contribution_df = dfx_contribution_to_df(cont)
-    # print(dfx_contribution_df)
-    # print(set_data_for_statistical_tests(dfx_contribution_df))
-    # print()
-    # shap_values_df = shap_values_to_df(shap_values, X_train.columns)
-    # print(shap_values_df)
-    # print(set_data_for_statistical_tests(shap_values_df))
-    # print()
-    # permutation_importance_df = permutation_importance_to_df(model, X_train, y_train)
-    # print(permutation_importance_df)
-    # print(set_data_for_statistical_tests(permutation_importance_df))
-    # print()
-    # lime_global_importance_df = lime_global_importance_to_df(model, X_train, y_train)
-    # print(lime_global_importance_df)
-    # print(set_data_for_statistical_tests(lime_global_importance_df))
-
-
