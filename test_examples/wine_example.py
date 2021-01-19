@@ -5,7 +5,7 @@ from plotter import Plotter
 from doe_utils import *
 
 # --- Other imports
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 import shap
 from numpy import random
@@ -17,9 +17,9 @@ if __name__ == '__main__':
     X_train, y_train, X_test, y_test = create_wine_data()
 
     # --- Model Training
-    model = RandomForestClassifier(n_estimators=500, random_state=random.seed(seed))
+    model = LogisticRegression(random_state=random.seed(seed))
     model.fit(X_train, y_train)
-    print("Fitting of Random Forest Classifier finished")
+    print("Fitting of Logistic Regression Classifier finished")
 
     rf_predict = model.predict(X_test)
     rf_score = accuracy_score(y_test, rf_predict)
@@ -28,11 +28,11 @@ if __name__ == '__main__':
     print(classification_report(y_test, model.predict(X_test)))
 
     # --- SHAP
-    explainer = shap.TreeExplainer(model)
+    explainer = shap.LinearExplainer(model, X_train)
     shap_values = explainer.shap_values(X_train)
     shap.summary_plot(shap_values, X_train, plot_type="bar")
 
-    # # --- DOE
+    # --- DOE
     dx = DoeXai(x_data=X_train, y_data=y_train, model=model, feature_names=list(X_train.columns))
     # features:
     """    
@@ -45,3 +45,16 @@ if __name__ == '__main__':
     # --- Plot
     p = Plotter(X_train)
     p.plot_doe_feature_contribution(cont)
+
+    # --- Add feature interaction and re train model
+    X_train['alcohol_malic_acid_ash'] = X_train['alcohol'] * X_train['malic_acid'] * X_train['ash']
+    X_test['alcohol_malic_acid_ash'] = X_test['alcohol'] * X_test['malic_acid'] * X_test['ash']
+
+    model = LogisticRegression(random_state=random.seed(seed))
+    model.fit(X_train, y_train)
+    print("Fitting of Logistic Regression Classifier finished  with new feature base on interaction")
+
+    rf_predict = model.predict(X_test)
+    rf_score = accuracy_score(y_test, rf_predict)
+    print(f'test score : {rf_score}')
+    print("=" * 80)

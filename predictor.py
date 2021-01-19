@@ -3,16 +3,27 @@ import numpy as np
 
 
 class Predictor:
-    def __init__(self, data_modified_list, target_df, model):
+    def __init__(self, data_modified_list, target_df, model, model_name=None):
         self.data_modified_list = data_modified_list
         self.target_df = target_df
         self.model = model
+        self.model_name = model_name
 
     def create_tabular_gs_df(self):
         all_predictions_one_target = []
         all_predictions_all_targets = []
         for data_modified in self.data_modified_list:
-            case_predictions = pd.DataFrame(self.model.predict_proba(data_modified))
+            # keras models
+            if self.model_name == 'CNN':
+                # CNN
+                case_predictions = pd.DataFrame(self.model.predict(data_modified.values.reshape(
+                    data_modified.shape[0], data_modified.shape[1], 1))).astype(float)
+            elif self.model_name == 'DNN':
+                # DNN
+                case_predictions = pd.DataFrame(self.model.predict(data_modified)).astype(float)
+            else:
+                # other model types
+                case_predictions = pd.DataFrame(self.model.predict_proba(data_modified))
             all_predictions_all_targets.append(case_predictions)
             case_predictions_one_target = []
             for v in case_predictions.iterrows():

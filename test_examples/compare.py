@@ -8,6 +8,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 import shap
 from numpy import random
+import gc
 seed = 42
 
 if __name__ == '__main__':
@@ -92,12 +93,16 @@ if __name__ == '__main__':
                   glass_y_test, mobile_price_y_test]
 
     print()
+    model_breakdown_dict_dfx_vs_shap = defaultdict(list)
+    model_breakdown_dict_dfx_vs_permutation = defaultdict(list)
+    model_breakdown_dict_model_dfx_vs_model_importance = defaultdict(list)
+    model_breakdown_dict_model_dfx_vs_random = defaultdict(list)
 
     # ------------------------------
     # ----- Run Experiment ---------
     # ------------------------------
 
-    list_of_models_names = ['LR', 'SVM', 'DTC', 'RF']
+    list_of_models_names = ['LR', 'SVM', 'DTC', 'RF', 'DNN', 'CNN']
 
     assert len(all_X_train) == len(all_y_train) == len(all_data_set_names) == 10
 
@@ -124,10 +129,13 @@ if __name__ == '__main__':
 
         for replication_index in range(number_of_replications):
             seed += replication_index
+            tf.random.set_seed(seed)
             list_of_models = [LogisticRegression(random_state=random.seed(seed)),
                               SVC(kernel='linear', probability=True, random_state=random.seed(seed)),
                               DecisionTreeClassifier(random_state=random.seed(seed)),
-                              RandomForestClassifier(n_estimators=50, random_state=random.seed(seed))]
+                              RandomForestClassifier(n_estimators=50, random_state=random.seed(seed)),
+                              tabular_dnn(len(list(X_train.columns)), len(set(y_train))),
+                              tabular_cnn(len(list(X_train.columns)), len(set(y_train)))]
 
             print(f'    start replication index {replication_index}')
 
@@ -137,7 +145,14 @@ if __name__ == '__main__':
                 # ----- build models ---------
                 # ----------------------------
 
-                model.fit(X_train, y_train)
+                if model_name == 'CNN':
+                    X_train_, y_train_ = set_cnn_data(X_train, y_train)
+                    model.fit(X_train_, y_train_)
+                elif model_name == 'DNN':
+                    X_train_, y_train_ = set_dnn_data(X_train, y_train)
+                    model.fit(X_train_, y_train_)
+                else:
+                    model.fit(X_train, y_train)
                 print(f"        finish fit model {model_name}, start Shap at ")
 
                 # ----------------
@@ -155,6 +170,17 @@ if __name__ == '__main__':
                     explainer = shap.TreeExplainer(model)
                     shap_values = explainer.shap_values(X_train)
 
+                elif model_name in ['DNN', 'CNN']:
+                    size = min(X_train.shape[0], 500)
+                    print(f"        train DeepExplainer on {model_name}")
+                    explainer = shap.DeepExplainer(model, X_train_[:size])
+                    if model_name == 'DNN':
+                        shap_values = explainer.shap_values(X_train_.iloc[:size].values, check_additivity=False)
+                    else:
+                        shap_values = explainer.shap_values(X_train_[:size], check_additivity=False)
+
+                    shap_values = clean_deep_shap_values(shap_values, X_train.iloc[:size].shape)
+
                 shap_values_as_df = shap_values_to_df(shap_values, list(X_train.columns))
 
                 # -------------------
@@ -162,16 +188,18 @@ if __name__ == '__main__':
                 # -------------------
 
                 print(f"        finish Shap, start dfx")
-                dx = DoeXai(x_data=X_train, y_data=y_train, model=model)
+                dx = DoeXai(x_data=X_train, y_data=y_train, model=model, model_name=model_name)
                 cont = dx.find_feature_contribution(only_orig_features=True)
                 dfx_importance_as_df = dfx_contribution_to_df(cont)
 
                 # ----------------------------------
                 # ----- PERMUTATION IMPORTANCE -----
                 # ----------------------------------
-
-                print(f"        finish dfx, start permutation importance")
-                permutation_importance_df = permutation_importance_to_df(model, X_train, y_train)
+                if model_name not in ['DNN', 'CNN']:
+                    print(f"        finish dfx, start permutation importance")
+                    permutation_importance_df = permutation_importance_to_df(model, X_train, y_train)
+                else:
+                    permutation_importance_df = permutation_importance_to_df(model, X_train, y_train, True)
 
                 # ----------------------------------
                 # ----- MODEL BASED IMPORTANCE -----
@@ -182,6 +210,8 @@ if __name__ == '__main__':
                     model_feature_importance = model.coef_
                 elif model_name in ['DTC', 'RF']:
                     model_feature_importance = model.feature_importances_
+                else:
+                    model_feature_importance = pd.Series([-1] * len(X_train.columns))
 
                 model_feature_importance_df = model_feature_importance_to_df(model_feature_importance, X_train.columns)
                 print(f"        finish model feature importance, start random importance")
@@ -205,13 +235,14 @@ if __name__ == '__main__':
                 run_dfs[model_name].append(run_df)
 
                 # output file per replication
-                run_df.to_csv(f'../examples_results/{data_set_name}/results_model_{model_name}_replication_{replication_index}.csv', index=False)
+                run_df.to_csv(f'../examples_results/datasets/{data_set_name}/results_model_{model_name}_replication_{replication_index}.csv', index=False)
 
                 print(f"        finish model {model_name}")
                 print()
 
             print(f'    finish replication index {replication_index}')
             print()
+        gc.collect()
 
         # -------------------------------------------------------------------------------------------------------
         # ----- RUN t test, kendalltau, pearson, spearman per average feature importance across replication -----
@@ -225,17 +256,21 @@ if __name__ == '__main__':
 
             # dfx vs random
             res1 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'random_feature_importance')
+            model_breakdown_dict_model_dfx_vs_random[model_name].append(res1)
 
             # dfx vs model feature importance
             res2 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'model_feature_importance')
+            model_breakdown_dict_model_dfx_vs_model_importance[model_name].append(res2)
 
             # dfx vs permutation feature importance
             res3 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'permutation_feature_importance')
+            model_breakdown_dict_dfx_vs_permutation[model_name].append(res3)
 
             # dfx vs shap
             res4 = run_4_tests_on_list_of_dfs(t_dfs, 'dfx_feature_importance', 'shap_feature_importance')
+            model_breakdown_dict_dfx_vs_shap[model_name].append(res4)
 
-            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'../examples_results/{data_set_name}/stats_results_on_model_{model_name}.csv')
+            pd.concat([res1, res2, res3, res4], axis=1).to_csv(f'../examples_results/datasets/{data_set_name}/stats_results_on_model_{model_name}.csv')
 
         # build one data set (all models and all 4 tests across replications) per data set
         one_df_per_data_set = create_one_metric_df_per_data_set(run_dfs, list_of_models_names)
@@ -262,9 +297,26 @@ if __name__ == '__main__':
         # output file per data set
         output = pd.concat([res5, res6, res7, res8, res9, res10], axis=1)
         output = output.fillna(-1)
-        output.to_csv(f'../examples_results/{data_set_name}/final_stats_on_{data_set_name}.csv')
-        one_df_per_data_set.to_csv(f'../examples_results/{data_set_name}/final_feature_importance_on_{data_set_name}.csv')
+        output.to_csv(f'../examples_results/datasets/{data_set_name}/final_stats_on_{data_set_name}.csv')
+        one_df_per_data_set.to_csv(f'../examples_results/datasets/{data_set_name}/final_feature_importance_on_{data_set_name}.csv')
 
         print(f'finish run tests on data set: {data_set_name}')
         print('------------------------------------------------')
         print()
+
+    for model_name in list_of_models_names:
+        output_dfx_vs_random = pd.concat(model_breakdown_dict_model_dfx_vs_random[model_name], axis=1)
+        output_dfx_vs_random = output_dfx_vs_random.fillna(-1)
+        output_dfx_vs_random.to_csv(f'../examples_results/models/final_{model_name}_dfx_vs_random_stats.csv')
+
+        output_dfx_vs_shap = pd.concat(model_breakdown_dict_dfx_vs_shap[model_name], axis=1)
+        output_dfx_vs_shap = output_dfx_vs_shap.fillna(-1)
+        output_dfx_vs_shap.to_csv(f'../examples_results/models/final_{model_name}_dfx_vs_shap_stats.csv')
+
+        output_dfx_vs_permutation = pd.concat(model_breakdown_dict_dfx_vs_permutation[model_name], axis=1)
+        outputdfx_vs_permutation = output_dfx_vs_permutation.fillna(-1)
+        output_dfx_vs_permutation.to_csv(f'../examples_results/models/final_{model_name}_dfx_vs_permutation_stats.csv')
+
+        output_dfx_vs_model_importance = pd.concat(model_breakdown_dict_model_dfx_vs_model_importance[model_name], axis=1)
+        output_dfx_vs_model_importance = output_dfx_vs_model_importance.fillna(-1)
+        output_dfx_vs_model_importance.to_csv(f'../examples_results/models/final_{model_name}_dfx_vs_model_importance_stats.csv')

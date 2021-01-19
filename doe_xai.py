@@ -12,7 +12,7 @@ from doe_utils import *
 
 class DoeXai:
 
-    def __init__(self, x_data, y_data, model, feature_names=None, design_file_name=None, verbose=0):
+    def __init__(self, x_data, y_data, model, feature_names=None, design_file_name=None, verbose=0, model_name=None):
         # condition on x_data
         if isinstance(x_data, pd.DataFrame):
             self.x_data = x_data.values
@@ -47,6 +47,7 @@ class DoeXai:
         else:
             self.dc = DesignCreator(feature_matrix=self.x_data)
         self.verbose = verbose
+        self.model_name = model_name
 
         reference_values = [row.mean() for row in self.x_data.T]
         lists_of_designs, list_of_all_positions_per_design = self.dc.get_lists_of_design_from_df_for_tabluar_data(
@@ -55,7 +56,7 @@ class DoeXai:
         dm = DataModifier(self.x_data, lists_of_designs, list_of_all_positions_per_design, len(reference_values))
         self.zeds_df, data_modified_list = dm.set_tabular_data_for_prediction()
 
-        p = Predictor(data_modified_list, self.y_data, self.model)
+        p = Predictor(data_modified_list, self.y_data, self.model, self.model_name)
         self.all_predictions_all_targets, self.all_predictions_df = p.create_tabular_gs_df()
 
     def find_feature_contribution(self, user_list=None, run_fffs=False, only_orig_features=False):

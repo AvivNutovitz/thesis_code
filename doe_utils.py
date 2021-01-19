@@ -9,7 +9,16 @@ import lime
 import lime.lime_tabular
 from sklearn.inspection import permutation_importance
 from sklearn.feature_selection import f_classif, mutual_info_classif
+from sklearn import preprocessing
 import random
+import tensorflow as tf
+from tensorflow.keras.layers import Dense, Input, Flatten, MaxPooling1D, Dropout, Conv1D, BatchNormalization
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.optimizers.schedules import ExponentialDecay
+from tensorflow.keras.models import Model
+from tensorflow.keras.utils import to_categorical
+tf.compat.v1.disable_v2_behavior()
+tf.random.set_seed(42)
 seed = 42
 random.seed(seed)
 
@@ -180,9 +189,12 @@ def model_feature_importance_to_df(model_feature_importance, feature_names):
     return tmp
 
 
-def permutation_importance_to_df(model, X, y):
-    results = permutation_importance(model, X, y, scoring='neg_mean_squared_error')
-    feature_importances = results.importances_mean
+def permutation_importance_to_df(model, X, y, is_deep_model=False):
+    if not is_deep_model:
+        results = permutation_importance(model, X, y, scoring='neg_mean_squared_error')
+        feature_importances = results.importances_mean
+    else:
+        feature_importances = [-1] * len(X.columns)
     tmp = pd.DataFrame({feature_name: [feature_importance] for feature_name, feature_importance in
                          zip(X.columns, feature_importances)}).T
     tmp = tmp.reset_index()
@@ -301,3 +313,67 @@ def create_one_metric_df_per_data_set(dfs, list_of_models_names):
                              'shap_feature_importance_mean': list(pd.concat(shap_feature_importance_dfs, axis=1).mean(axis=1)),
                              'random_feature_importance_mean': list(pd.concat(random_feature_importance_dfs, axis=1).mean(axis=1))})
     return all_data
+
+def gelu(x):
+    return 0.5 * x * (1 + tf.tanh(tf.sqrt(2 / np.pi) * (x + 0.044715 * tf.pow(x, 3))))
+
+
+def tabular_dnn(n_of_input_columns, n_of_output_classes, feature_selection_dropout=0.2,
+                first_dense=256, second_dense=256, third_dense=256,
+                forth_dense=256, dense_dropout=0.5,
+                activation_type=gelu):
+
+    inputs = Input(shape=(n_of_input_columns,))
+    inputs_normalization = BatchNormalization()(inputs)
+    inputs_feature_selection = Dropout(feature_selection_dropout)(inputs_normalization)
+
+    x = Dense(first_dense, activation=activation_type)(inputs_feature_selection)
+    x = Dropout(dense_dropout)(x)
+    x = Dense(second_dense, activation=activation_type)(x)
+    x = Dropout(dense_dropout)(x)
+    x = Dense(third_dense, activation=activation_type)(x)
+    x = Dropout(dense_dropout)(x)
+    output = Dense(n_of_output_classes, activation="sigmoid")(x)
+    model = Model(inputs, output)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['categorical_accuracy'])
+    return model
+
+
+def tabular_cnn(n_of_input_columns, n_of_output_classes):
+    inputs = Input(shape=(n_of_input_columns, 1))
+    inputs_normalization = BatchNormalization()(inputs)
+    x = Conv1D(filters=128, kernel_size=9, activation='relu', padding='same')(inputs_normalization)
+    x = Conv1D(filters=64, kernel_size=7, activation='relu', padding='same')(x)
+    x = Dropout(0.5)(x)
+    x = Conv1D(filters=64, kernel_size=5, activation='relu', padding='same')(x)
+    x = MaxPooling1D(pool_size=5, padding='same')(x)
+    x = Dense(256, activation='relu')(x)
+    x = Dropout(0.5)(x)
+    x = Flatten()(x)
+    x = Dense(256, activation='relu')(x)
+    output = Dense(n_of_output_classes, activation='softmax')(x)
+    model = Model(inputs, output)
+    lr_schedule = ExponentialDecay(
+        initial_learning_rate=1e-3,
+        decay_steps=1000,
+        decay_rate=0.8)
+    optimizer = SGD(learning_rate=lr_schedule)
+    model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=['categorical_accuracy'])
+    return model
+
+
+def clean_deep_shap_values(shap_values, input_shape):
+    if isinstance(shap_values, list):
+        return np.mean(shap_values, axis=0).reshape(input_shape)
+    else:
+        return shap_values.reshape(input_shape)
+
+
+def set_dnn_data(X_train, y_train):
+    return X_train, to_categorical(y_train, len(set(y_train)))
+
+
+def set_cnn_data(X_train, y_train):
+    X_train_ = X_train.values.reshape(X_train.shape[0], X_train.shape[1], 1)
+    y_train_ = to_categorical(y_train, len(set(y_train)))
+    return X_train_, y_train_
