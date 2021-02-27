@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import random
-from doe_utils import get_base
+from doe_xai_utils import get_base
 
 random.seed = 42
 

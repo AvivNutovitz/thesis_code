@@ -14,13 +14,9 @@ class Predictor:
         all_predictions_all_targets = []
         for data_modified in self.data_modified_list:
             # keras models
-            if self.model_name == 'CNN':
+            if self.model_name == 'CNN' or self.model_name == 'DNN':
                 # CNN
-                case_predictions = pd.DataFrame(self.model.predict(data_modified.values.reshape(
-                    data_modified.shape[0], data_modified.shape[1], 1))).astype(float)
-            elif self.model_name == 'DNN':
-                # DNN
-                case_predictions = pd.DataFrame(self.model.predict(data_modified)).astype(float)
+                case_predictions = pd.DataFrame(self.model.predict(data_modified).astype(float))
             else:
                 # other model types
                 case_predictions = pd.DataFrame(self.model.predict_proba(data_modified))
