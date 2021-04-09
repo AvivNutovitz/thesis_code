@@ -5,7 +5,6 @@ from scipy.sparse import csr_matrix
 from design_creator import DesignCreator
 from data_modifier import DataModifier
 from predictor import Predictor
-from validator import Validator
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RepeatedKFold
 from sklearn.linear_model import ElasticNet, LinearRegression
@@ -134,7 +133,7 @@ class DoeXai:
 
     @staticmethod
     def get_best_linear_model(X, y):
-        model = ElasticNet(max_iter=1000) if X.shape[0] > X.shape[1] else ElasticNet(max_iter=1000, dual=True)
+        model = ElasticNet(max_iter=1000) if X.shape[0] > X.shape[1] else ElasticNet(max_iter=1000)
         # define model evaluation method
         cv = RepeatedKFold(n_splits=10, n_repeats=3, random_state=1)
         # define grid

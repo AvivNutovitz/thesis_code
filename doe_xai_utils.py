@@ -1,37 +1,40 @@
-import pandas as pd
-import numpy as np
-import warnings
-warnings.filterwarnings("ignore")
-from collections import defaultdict
-import matplotlib.pyplot as plt
-import shap
 import os
-from scipy import stats
+import gc
+import shap
 import lime
 import lime.lime_tabular
-from sklearn.inspection import permutation_importance
-from sklearn.feature_selection import f_classif, mutual_info_classif
-from sklearn import preprocessing
-from sklearn.preprocessing import MinMaxScaler
-import plotly.express as px
-from sklearn.metrics import log_loss, accuracy_score
-import random
+from numpy import random
+import warnings
+import numpy as np
+import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.layers import Dense, Input, Flatten, MaxPooling1D, Dropout, Conv1D, BatchNormalization, Reshape
+import plotly.express as px
+import matplotlib.pyplot as plt
+from scipy import stats
+from collections import defaultdict
+from itertools import combinations
+
+from sklearn import preprocessing
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.inspection import permutation_importance
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.feature_selection import f_classif, mutual_info_classif
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.optimizers.schedules import ExponentialDecay
-from tensorflow.keras.models import Model
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Dense, Input, Flatten, MaxPooling1D, Dropout, Conv1D, BatchNormalization, Reshape
+
+warnings.filterwarnings("ignore")
 tf.compat.v1.disable_v2_behavior()
-tf.random.set_seed(42)
 seed = 42
 random.seed(seed)
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
-from numpy import random
-import gc
-from statsmodels.stats.outliers_influence import variance_inflation_factor
+tf.random.set_seed(seed)
 
 
 results_folder = '/'.join([os.path.dirname(os.path.abspath(__file__)), 'experiments_results'])
@@ -285,6 +288,7 @@ def load_data(file_name, size=-1):
         y = df["stroke"]
         return X, y
     elif file_name == 'company_bankruptcy_prediction':
+        df.columns = [str(col).strip() for col in list(df.columns)]
         X = df.drop(["Bankrupt?"], axis=1)
         y = df['Bankrupt?']
         return X, y
@@ -677,3 +681,10 @@ def create_shap_values(model_name, model, X_train):
     shap_values_as_df, shap_indices = shap_values_to_df(shap_values, list(X_train.columns))
     return shap_values_as_df, shap_indices
 
+
+def create_all_feature_interactions_from_df(x_train, levels=3):
+    return create_all_feature_interactions_from_list(x_train.columns, levels)
+
+
+def create_all_feature_interactions_from_list(l, levels=3):
+    return [list(l) for l in list(combinations(l, levels))]
